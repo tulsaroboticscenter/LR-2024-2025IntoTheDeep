@@ -11,8 +11,8 @@ import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.Hardware.HWProfile;
 
-import org.firstinspires.ftc.teamcode.Misc.Drawing;
 import org.firstinspires.ftc.teamcode.Hardware.MecanumDrive;
+import org.firstinspires.ftc.teamcode.Misc.Drawing;
 import org.firstinspires.ftc.teamcode.Misc.TankDrive;
 
 @TeleOp(name = "localization test")

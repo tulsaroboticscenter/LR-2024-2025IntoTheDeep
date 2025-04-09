@@ -35,7 +35,7 @@ public class ArmSubsystem extends Subsystem {
 //    public static double Kp = 70;
     public static double Kp = .1;
     public static double KpScoreSpec = 0.05;
-    public static double KpScore = .02;
+    public static double KpScore = 0.03;
     public static double Ki = 0.001;
     public static double Kd = 0.001;
     public static double KdScore = 0;
@@ -143,7 +143,9 @@ public class ArmSubsystem extends Subsystem {
     }
 
     private void animateTransition() {
-        if (animationType == AnimationType.NORMAL || animationType == AnimationType.FAST || animationType == AnimationType.ROTATE_SOME_WHILE_RETRACT) {
+        double slidesTransitionLen = params.SLIDES_TRANSITION_LEN;
+
+        if (animationType == AnimationType.NORMAL || animationType == AnimationType.ROTATE_SOME_WHILE_RETRACT) {
             if (teleopModeStart) waitSlidesTransition = true;
             if (teleopModeStart) armReachedPosition = false;
             if (teleopModeStart) armTransistionStage = 1;
@@ -157,8 +159,6 @@ public class ArmSubsystem extends Subsystem {
 
             if (armTransistionStage == 1) {
                 slidesRetract = true;
-
-                double slidesTransitionLen = params.SLIDES_TRANSITION_LEN;
 
                 if (animationType == AnimationType.FAST && autoMode) {
                     slidesTransitionLen = slidesTargetPos;
@@ -193,6 +193,25 @@ public class ArmSubsystem extends Subsystem {
             armReachedPosition = true;
             armTransistionStage = 3;
             slidesRetract = false;
+        } else if (animationType == AnimationType.FAST) {
+//            if(armAtPosition()) armReachedPosition = true;
+//            if(slidesAtPosition()) waitSlidesTransition = false;
+
+            slidesRetract = false;
+
+            if (getSlidesPosition() >= slidesTransitionLen + params.SLIDES_ERROR_TOLERANCE) {
+                if (armTransistionStage == 1)
+                    waitSlidesTransition = true;
+            } else {
+                waitSlidesTransition = false;
+                armTransistionStage = 2;
+            }
+
+            if (!waitSlidesTransition && (!armAtPosition() || !slidesAtPosition())) {
+                armTransistionStage = 2;
+            } else {
+                armTransistionStage = 3;
+            }
         }
 
     }
@@ -343,6 +362,10 @@ public class ArmSubsystem extends Subsystem {
     private void setSlidesPosition(double len) {
         len = MathFunctions.clamp(len, params.SLIDES_MIN_POS, params.SLIDES_MAX_POS);
 
+        if (armTransistionStage == 2 && animationType == AnimationType.FAST) {
+            len = map(getArmPosition(), 0, params.ARM_BUCKET2_SCORE_DEG, getSlidesPosition(), slidesTargetPos);
+        }
+
         if (slidesRetract || waitSlidesTransition) {
             if (animationType == AnimationType.NORMAL || !autoMode) {
                 len = params.SLIDES_TRANSITION_LEN * params.SLIDES_TICKS_PER_INCH;
@@ -446,22 +469,28 @@ public class ArmSubsystem extends Subsystem {
                     slidesPos = MathFunctions.clamp(intakePos, 0, params.INTAKE_MAX_POS);
                 }
 
-                slidesPos = Math.sqrt((params.SLIDE_GROUND_POS * params.SLIDE_GROUND_POS) + (slidesPos * slidesPos));
+                if (!autoMode) {
+                    slidesPos = Math.sqrt((params.SLIDE_GROUND_POS * params.SLIDE_GROUND_POS) + (slidesPos * slidesPos));
+                }
 
                 setTargetSlidesPosition(slidesPos);
                 double armDeg = 0;
 
-                if (intakeDownMode) {
+                if (!intakeDownMode) {
 //                    armDeg = map(slidesPos, 3, 36, 17 - 5, 25 - 1.5);
                     armDeg = params.ARM_INTAKE_MODE_UP_DEG;
                 } else {
-                    armDeg = params.ARM_INTAKE_POS;
+                    if (!autoMode) {
+                        armDeg = params.ARM_INTAKE_POS;
+                    } else {
+                        armDeg = 0;
+                    }
                 }
 
                 setArmTargetPosition(armDeg);
             } else {
                 if (!autoMode) {
-                    if(slidesAtPosition(1)) {
+                    if (slidesAtPosition(1)) {
                         setSlidesPowerLimit(0);
                     } else {
                         setSlidesPowerLimit(1);
@@ -573,11 +602,11 @@ public class ArmSubsystem extends Subsystem {
                 }
             }
 
-            if(slidesPower != 1) {
+            if (slidesPower != 1) {
                 setSlidesMultiplier(1);
             }
 
-            if(slidesMultPower != 1) {
+            if (slidesMultPower != 1) {
                 setSlidesPowerLimit(1);
             }
 
@@ -612,18 +641,18 @@ public class ArmSubsystem extends Subsystem {
             setAnimationType(AnimationType.NONE);
         }
 
-        if(lastTeleopMode == TeleopMode.INTAKE && intakeSpecimen && slidesPower == 0) {
+        if (lastTeleopMode == TeleopMode.INTAKE && intakeSpecimen && slidesPower == 0) {
             setSlidesPowerLimit(1);
         }
 
         setArmPosition();
 
-        if (armTransistionStage == 3 && (currentMode == TeleopMode.INTAKE && !intakeSpecimen && !intakeDownMode) && !autoMode) {
+        if (armTransistionStage == 3 && (currentMode == TeleopMode.INTAKE && !intakeSpecimen && intakeDownMode) && !autoMode) {
             armPID.setP(Kp_Intake);
             armPID.setI(Ki_Intake);
             armPID.setD(Kd_Intake);
         } else {
-            if (currentMode == TeleopMode.BUCKET_SCORE) {
+            if (currentMode == TeleopMode.BUCKET_SCORE || currentMode == TeleopMode.TOUCH_POLE_AUTO || (lastTeleopMode == TeleopMode.BUCKET_SCORE && armTransistionStage == 1)) {
                 armPID.setP(KpScore);
                 armPID.setD(KdScore);
             } else if (currentMode == TeleopMode.SPECIMEN_SCORE) {
@@ -638,7 +667,12 @@ public class ArmSubsystem extends Subsystem {
         voltage = robot.voltageSensor.getVoltage();
 
         if (slidesGoingDown && (currentMode == TeleopMode.BUCKET_SCORE || (lastTeleopMode == TeleopMode.BUCKET_SCORE && armTransistionStage != 3))) {
-            setSlidesPowerLimit(.5);
+            if (slides1Current >= params.SLIDES_FAILSAFE_CURRENT || slides2Current >= params.SLIDES_FAILSAFE_CURRENT) {
+                setTeleopMode(TeleopMode.BUCKET_SCORE);
+                setAnimationType(AnimationType.NONE);
+            } else {
+                setSlidesPowerLimit(.5);
+            }
         } else if ((currentMode == TeleopMode.BUCKET_SCORE)) {
             setSlidesPowerLimit(1);
         }
@@ -650,7 +684,7 @@ public class ArmSubsystem extends Subsystem {
             scoreReachedPos = true;
         }
 
-        if (currentMode == TeleopMode.BUCKET_SCORE && !scoreReachedPos && !slidesGoingDown && armTransistionStage == 3) {
+        if (currentMode == TeleopMode.BUCKET_SCORE && bucketScore == 2 && !scoreReachedPos && !slidesGoingDown && armTransistionStage == 3) {
             slidesPID.setPID(SlidesKpScore, SlidesKiScore, SlidesKdScore);
         } else {
             slidesPID.setPID(SlidesKp, SlidesKi, SlidesKd);
@@ -659,7 +693,7 @@ public class ArmSubsystem extends Subsystem {
         slidesOut = Range.clip(slidesPID.calculate(slidesRawCurrentPos) * slidesMultPower, -slidesPower, slidesPower);
 
         if (slidesDisabled) slidesOut = 0;
-        opMode.telemetry.addData("arm going down: ", armGoingDown);
+//        opMode.telemetry.addData("arm going down: ", armGoingDown);
 
         if (!useThread) {
             try {

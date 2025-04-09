@@ -27,6 +27,8 @@ public class BrokenBot extends LinearOpMode {
 
         waitForStart();
 
+        robot.imu.resetYaw();
+
 //        arm.setArmCustomPosition(45);
 //        arm.setAutoMode(true);
 //        arm.useMotionProfile(true);
@@ -86,6 +88,7 @@ public class BrokenBot extends LinearOpMode {
             robot.armMotor.setPower(0);
 
             telemetry.addData("VSensor: ", voltageSensor.getVoltage());
+            telemetry.addData("imu2: ", robot.imu.getRobotYawPitchRollAngles().getYaw());
             telemetry.addData("arm encoder: ", robot.armEncoder.getVoltage());
             telemetry.addData("slides encoder: ", robot.slidesMotor1.getCurrentPosition());
             telemetry.addData("motorLR", robot.motorLR.getCurrent(CurrentUnit.AMPS));

@@ -26,7 +26,7 @@ import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathChain;
 import java.util.concurrent.TimeUnit;
 
 @Config
-@Autonomous(name = "0+4 V1 Pedro", group = "0", preselectTeleOp = "0: Main TeleOp")
+@Autonomous(name = "Specimen V1 Pedro", group = "0", preselectTeleOp = "0: Main TeleOp")
 public class V1_0_4_Pedro extends LinearOpMode {
     private Follower follower;
     private ElapsedTime autoTime = new ElapsedTime();
@@ -129,7 +129,7 @@ public class V1_0_4_Pedro extends LinearOpMode {
             arm.update(opModeIsActive());
 //            intake.update(opModeIsActive());
 
-            arm.setArmPositionSpecimen(params.ARM_INSPECTION_POS);
+            arm.setArmPositionSpecimen(params.ARM_INSPECTION_POS_AUTO);
             arm.setSlidesPositionSpecimen(0);
 
             arm.update(opModeIsActive());
@@ -179,7 +179,6 @@ public class V1_0_4_Pedro extends LinearOpMode {
         autoManager.safeSleep(100);
 
         params.AUTO_SCORE = 37;
-        params.AUTO_END_HEADING = 0;
 
         time.reset();
         arm.setArmPower(.6);
@@ -202,7 +201,6 @@ public class V1_0_4_Pedro extends LinearOpMode {
         } else {
 
             params.TELEOP_START_MODE = TeleopMode.IDLE;
-            params.AUTO_END_HEADING = 180;
 
 //        bucketScore(1);
             specimenScore(1);
@@ -223,7 +221,6 @@ public class V1_0_4_Pedro extends LinearOpMode {
             telemetryA.addData("time: ", time.time(TimeUnit.SECONDS));
 
             params.TELEOP_START_MODE = TeleopMode.IDLE;
-            params.AUTO_END_HEADING = Math.toDegrees(follower.getPose().getHeading());
 
             telemetryA.update();
             follower.breakFollowing();
@@ -254,6 +251,8 @@ public class V1_0_4_Pedro extends LinearOpMode {
         intake.setWristAngle(wristAngle);
         intake.setGrabAngle(GrabAngle.VERTICAL_GRAB);
 
+//        autoManager.setSlowDown(.8, .1);
+
         if (specNum == 1) {
             autoManager.runPath(autoManager.specScore1);
         } else if (specNum == 2) {
@@ -265,6 +264,8 @@ public class V1_0_4_Pedro extends LinearOpMode {
         } else if (specNum == 5) {
             autoManager.runPath(autoManager.specScore5);
         }
+
+//        autoManager.setSlowDown(1, 1);
 
         autoManager.setSpeed(1);
 //        autoManager.waitForArmAndSlides(1000);
@@ -319,7 +320,7 @@ public class V1_0_4_Pedro extends LinearOpMode {
             arm.update(opModeIsActive());
             intake.update(opModeIsActive());
         } else {
-            arm.setSlidesPositionSpecimen(params.SLIDES_SPECIMEN_POLE_2_START + 2);
+            arm.setSlidesPositionSpecimen(params.SLIDES_SPECIMEN_POLE_2_START + 3.5);
             arm.update(opModeIsActive());
         }
 
@@ -346,9 +347,9 @@ public class V1_0_4_Pedro extends LinearOpMode {
 
 //        autoManager.useDistance(true);
         if(specNum == 1) {
-            autoManager.safeSleep(500);
+            autoManager.safeSleep(400);
         } else {
-            autoManager.safeSleep(300);
+            autoManager.safeSleep(200);
         }
 
         autoManager.setSpeed(0);

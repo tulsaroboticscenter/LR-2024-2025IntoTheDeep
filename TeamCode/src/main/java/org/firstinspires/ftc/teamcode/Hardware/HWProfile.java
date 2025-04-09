@@ -119,10 +119,10 @@ public class HWProfile {
         clawServo.setInverted(false);
         clawServo.disable();
 
-        diffyLeft = new SimpleServo(hwMap, "diffyLeft", 0, 270, AngleUnit.DEGREES);
+        diffyLeft = new SimpleServo(hwMap, "diffyLeft", 0, 320, AngleUnit.DEGREES);
         diffyLeft.setInverted(false);
 
-        diffyRight = new SimpleServo(hwMap, "diffyRight", 0, 270, AngleUnit.DEGREES);
+        diffyRight = new SimpleServo(hwMap, "diffyRight", 0, 320, AngleUnit.DEGREES);
         diffyRight.setInverted(true);
         diffyRight.disable();
 
