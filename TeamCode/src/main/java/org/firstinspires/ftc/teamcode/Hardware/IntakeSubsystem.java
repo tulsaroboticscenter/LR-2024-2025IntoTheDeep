@@ -11,7 +11,7 @@ import org.firstinspires.ftc.teamcode.Enums.GrabStyle;
 import org.firstinspires.ftc.teamcode.Enums.IntakeMode;
 import org.firstinspires.ftc.teamcode.Enums.TeleopMode;
 import org.firstinspires.ftc.teamcode.Enums.WristAngle;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.MathFunctions;
+import org.firstinspires.ftc.teamcode.bedroBathing.pathGeneration.MathFunctions;
 
 @Config
 public class IntakeSubsystem extends Subsystem {
@@ -70,7 +70,6 @@ public class IntakeSubsystem extends Subsystem {
     }
 
     public void setCustomPivotAngle(double customAngle) {
-        customAngle = MathFunctions.clamp(customAngle, 0, 270);
         this.customAngle = customAngle;
     }
 
@@ -157,13 +156,19 @@ public class IntakeSubsystem extends Subsystem {
         if (wristAngle == WristAngle.DOWN) {
             currentWristAngle = params.WRIST_INTAKE_ANGLE;
         } else if (wristAngle == WristAngle.BUCKET_SCORE) {
-            currentWristAngle = params.WRIST_SCORE_ANGLE;
+            if(!pedroAuto) {
+                currentWristAngle = params.WRIST_SCORE_ANGLE;
+            } else {
+                currentWristAngle = params.WRIST_SCORE_ANGLE_AUTO;
+            }
         } else if (wristAngle == WristAngle.SPECIMEN_INTAKE) {
             currentWristAngle = params.WRIST_SPECIMEN_INTAKE_ANGLE;
         } else if (wristAngle == WristAngle.SPECIMEN_SCORE_1) {
             currentWristAngle = params.WRIST_SPECIMEN_SCORE_1_ANGLE;
         } else if (wristAngle == WristAngle.SPECIMEN_SCORE_2) {
             currentWristAngle = params.WRIST_SPECIMEN_SCORE_2_ANGLE;
+        } else if (wristAngle == WristAngle.SPECIMEN_SCORE_FRONT) {
+            currentWristAngle = params.WRIST_SPECIMEN_SCORE_FRONT_ANGLE;
         } else if (wristAngle == WristAngle.IDLE) {
             currentWristAngle = params.WRIST_IDLE_ANGLE;
         } else if (wristAngle == WristAngle.CUSTOM) {
@@ -190,7 +195,7 @@ public class IntakeSubsystem extends Subsystem {
     private void updateDiffy() {
         double fixedWristPos = Range.clip(currentWristAngle, 0, 180);
         fixedWristPos += 45;
-        double fixedPivotPos = (Range.clip(currentPivotAngle, -90, 135) / 2.88);
+        double fixedPivotPos = (Range.clip(currentPivotAngle, -135, 135) / 2.88);
 
 //        opMode.telemetry.addData("fixedPivot: ", fixedPivotPos);
 

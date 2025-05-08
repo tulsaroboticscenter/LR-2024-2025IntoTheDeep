@@ -4,7 +4,7 @@ import com.acmerobotics.roadrunner.Vector2d;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 
 import org.firstinspires.ftc.teamcode.Hardware.MecanumDrive;
-import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
+import org.firstinspires.ftc.teamcode.bedroBathing.localization.Pose;
 
 public class RRLocalizer extends Localizer {
     private MecanumDrive mecanumDrive;

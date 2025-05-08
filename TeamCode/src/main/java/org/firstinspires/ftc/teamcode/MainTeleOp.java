@@ -26,9 +26,10 @@ import org.firstinspires.ftc.teamcode.Hardware.IntakeSubsystem;
 import org.firstinspires.ftc.teamcode.Hardware.MecanumDrive;
 import org.firstinspires.ftc.teamcode.Hardware.Params;
 import org.firstinspires.ftc.teamcode.Enums.TeleopMode;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.MathFunctions;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathChain;
-import org.firstinspires.ftc.teamcode.pedroPathing.tuning.FollowerConstants;
+import org.firstinspires.ftc.teamcode.Hardware.SpecimenArm;
+import org.firstinspires.ftc.teamcode.bedroBathing.pathGeneration.MathFunctions;
+import org.firstinspires.ftc.teamcode.bedroBathing.pathGeneration.PathChain;
+import org.firstinspires.ftc.teamcode.bedroBathing.tuning.FollowerConstants;
 
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -94,17 +95,19 @@ public class MainTeleOp extends LinearOpMode {
     private int cycles = 0;
     private int lastLoopHertz = 0;
     private boolean specimenInScorePos = false;
-//    private Follower follower;
+    private boolean useSpecArm = true;
+    private SpecimenArm specimenArm;
+    //    private Follower follower;
     private MecanumDrive mecDrive;
 
     @Override
     public void runOpMode() throws InterruptedException {
 //        follower = new Follower(hardwareMap);
-        mecDrive = new MecanumDrive(hardwareMap, new Pose2d(0,0,0), false);
+        mecDrive = new MecanumDrive(hardwareMap, new Pose2d(0, 0, 0), false);
 
         List<LynxModule> allHubs = hardwareMap.getAll(LynxModule.class);
 
-        for(LynxModule hub : allHubs) {
+        for (LynxModule hub : allHubs) {
             hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
         }
 
@@ -124,17 +127,10 @@ public class MainTeleOp extends LinearOpMode {
         rightRear.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-//        mecDrive = new MecanumDrive(robot.motorLF, robot.motorRF, robot.motorLR, robot.motorRR);
-
-//        leftFront = robot.motorLF;
-//        leftRear = robot.motorLR;
-//        rightRear = robot.motorRR;
-//        rightFront = robot.motorRF;
-
         mTelemetry = new MultipleTelemetry(telemetry, FtcDashboard.getInstance().getTelemetry());
 
         robot.otos.calibrateImu();
-        robot.otos.setPosition(new SparkFunOTOS.Pose2D(0,0,Math.toRadians(Params.AUTO_END_HEADING)));
+        robot.otos.setPosition(new SparkFunOTOS.Pose2D(0, 0, Math.toRadians(Params.AUTO_END_HEADING)));
 
         waitForStart();
 
@@ -150,7 +146,7 @@ public class MainTeleOp extends LinearOpMode {
         arm.update(opModeIsActive());
 
         if (arm.getArmPosition() >= 30) {
-            if(arm.getSlidesPosition() < 30) {
+            if (arm.getSlidesPosition() < 30) {
                 teleopMode = TeleopMode.TOUCH_POLE_AUTO;
                 arm.setParkArmUp(true);
             } else {
@@ -158,6 +154,9 @@ public class MainTeleOp extends LinearOpMode {
                 arm.setBucket(2);
             }
         }
+
+        specimenArm = new SpecimenArm(robot);
+        specimenArm.setTeleopMode(TeleopMode.IDLE);
 
         arm.setTeleopMode(teleopMode);
         arm.setAnimationType(AnimationType.NONE);
@@ -183,16 +182,8 @@ public class MainTeleOp extends LinearOpMode {
             double rotY = -gamepad1.left_stick_x * Math.sin(botHeading) + -gamepad1.left_stick_y * Math.cos(botHeading);
 
             if (slowMode) {
-//                MecanumDrive.driveFieldCentric(-gamepad1.left_stick_x * params.SLOWMODE_XY_MULT, gamepad1.left_stick_y * params.SLOWMODE_XY_MULT, -gamepad1.right_stick_x * params.SLOWMODE_TURN_MULT, robot.imu.getRobotYawPitchRollAngles().getYaw() + Params.AUTO_END_HEADING, true);
-//                mecDrive.driveFieldCentric(-gamepad1.left_stick_x, gamepad1.left_stick_y, -gamepad1.right_stick_x, robot.imu.getRobotYawPitchRollAngles().getYaw() + Params.AUTO_END_HEADING, true);
-//                follower.setTeleOpMovementVectors(-gamepad1.left_stick_y * params.SLOWMODE_XY_MULT, -gamepad1.left_stick_x * params.SLOWMODE_XY_MULT, -gamepad1.right_stick_x * params.SLOWMODE_TURN_MULT, false);
-
                 mecDrive.setDrivePowers(new PoseVelocity2d(new Vector2d(rotY, rotX), -gamepad1.right_stick_x));
             } else {
-//                mecDrive.driveRobotCentric(-gamepad1.left_stick_x, gamepad1.left_stick_y, -gamepad1.right_stick_x, false);
-//                follower.setTeleOpMovementVectors(-gamepad1.left_stick_y, -gamepad1.left_stick_x, -gamepad1.right_stick_x, false);
-//                mecDrive.driveFieldCentric(-gamepad1.left_stick_x, gamepad1.left_stick_y, -gamepad1.right_stick_x, robot.imu.getRobotYawPitchRollAngles().getYaw() + Params.AUTO_END_HEADING, true);
-
                 mecDrive.setDrivePowers(new PoseVelocity2d(new Vector2d(rotY, rotX), -gamepad1.right_stick_x));
             }
 
@@ -200,60 +191,82 @@ public class MainTeleOp extends LinearOpMode {
 
             /* *******************INTAKE******************* */
 
-            if (gamepad1.dpad_right && !autoPathingEnabled || (teleopMode == TeleopMode.SPECIMEN_SCORE && gamepad1.left_bumper && arm.getArmTransistionStage() == 3)) {
+            if (gamepad1.dpad_right && !autoPathingEnabled || (teleopMode == TeleopMode.SPECIMEN_SCORE && gamepad1.left_bumper && !lbCooldown && arm.getArmTransistionStage() == 3)) {
                 teleopMode = TeleopMode.INTAKE;
                 grabAngle = GrabAngle.VERTICAL_GRAB;
 
-                intake.setGrabAngle(grabAngle);
-                arm.setTeleopMode(teleopMode);
+                if (gamepad1.left_bumper) lbCooldown = true;
+
                 arm.intakeSpecimen = true;
-                intake.outtake();
-                intake.update(opModeIsActive());
+
+                if (!useSpecArm) {
+                    intake.setGrabAngle(grabAngle);
+                    arm.setTeleopMode(teleopMode);
+                    intake.outtake();
+                    intake.update(opModeIsActive());
+                } else {
+                    arm.setTeleopMode(TeleopMode.CUSTOM_POSITION);
+                    arm.setArmCustomPosition(65);
+                    arm.setSlidesCustomPosition(4);
+                    arm.update(opModeIsActive());
+
+                    specimenArm.setTeleopMode(TeleopMode.INTAKE);
+                    specimenArm.update(opModeIsActive());
+                }
             }
 
             if (teleopMode == TeleopMode.INTAKE && arm.intakeSpecimen) {
-                grabAngle = GrabAngle.VERTICAL_GRAB;
-                grabStyle = GrabStyle.OUTSIDE_GRAB;
-                wristAngle = WristAngle.SPECIMEN_INTAKE;
+                if (!useSpecArm) {
+                    grabAngle = GrabAngle.VERTICAL_GRAB;
+                    grabStyle = GrabStyle.OUTSIDE_GRAB;
+                    wristAngle = WristAngle.SPECIMEN_INTAKE;
 
-                intake.setWristAngle(wristAngle);
-                intake.setGrabStyle(grabStyle);
-                intake.setGrabAngle(grabAngle);
+                    intake.setWristAngle(wristAngle);
+                    intake.setGrabStyle(grabStyle);
+                    intake.setGrabAngle(grabAngle);
 //                intake.setShortRange(true);
 
-                if (params.INTAKE_TYPE == IntakeType.TWO_WHEEL_INTAKE) {
-                    intake.intake();
-                } else if (params.INTAKE_TYPE == IntakeType.CLAW) {
-                    if (gamepad1.right_bumper && !rBumperCooldown) {
-                        specIntakeTimer.reset();
-                        intake.toggle();
-                        rBumperCooldown = true;
-                    }
-                }
-
-                if (gamepad1.right_trigger > .1) {
-                    arm.intakeUpMode();
-                } else {
-                    arm.intakeDownMode();
-                }
-
-                if (params.INTAKE_TYPE == IntakeType.TWO_WHEEL_INTAKE) {
-                    if (gamepad1.right_bumper) {
-                        arm.intakeUpSpecimen = 1;
-                    } else {
-                        arm.intakeUpSpecimen = 0;
-                    }
-                } else if (params.INTAKE_TYPE == IntakeType.CLAW) {
-                    if (gamepad1.left_bumper) {
-                        lbCooldown = true;
-
-                        if (intake.closed) {
-                            arm.intakeUpSpecimen = 2;
-                        } else {
-                            arm.intakeUpSpecimen = 1;
+                    if (params.INTAKE_TYPE == IntakeType.TWO_WHEEL_INTAKE) {
+                        intake.intake();
+                    } else if (params.INTAKE_TYPE == IntakeType.CLAW) {
+                        if (gamepad1.right_bumper && !rBumperCooldown) {
+                            specIntakeTimer.reset();
+                            intake.toggle();
+                            rBumperCooldown = true;
                         }
+                    }
+
+                    if (gamepad1.right_trigger > .1) {
+                        arm.intakeUpMode();
                     } else {
-                        arm.intakeUpSpecimen = 0;
+                        arm.intakeDownMode();
+                    }
+
+                    if (params.INTAKE_TYPE == IntakeType.TWO_WHEEL_INTAKE) {
+                        if (gamepad1.right_bumper) {
+                            arm.intakeUpSpecimen = 1;
+                        } else {
+                            arm.intakeUpSpecimen = 0;
+                        }
+                    } else if (params.INTAKE_TYPE == IntakeType.CLAW) {
+//                    if (gamepad1.left_bumper && !lbCooldown) {
+////                        lbCooldown = true;
+//
+//                        if (intake.closed) {
+//                            arm.intakeUpSpecimen = 2;
+//                        } else {
+//                            arm.intakeUpSpecimen = 1;
+//                        }
+//                    } else {
+//                        arm.intakeUpSpecimen = 0;
+//                    }
+                    }
+                } else {
+                    telemetry.addLine("update");
+
+                    if (gamepad1.right_bumper && !rBumperCooldown) {
+                        rBumperCooldown = true;
+                        specimenArm.toggleClaw();
                     }
                 }
             } else {
@@ -339,9 +352,6 @@ public class MainTeleOp extends LinearOpMode {
 
 
             /* *******************BUCKET SCORE☑******************* */
-
-            if (!gamepad1.left_bumper) lbCooldown = false;
-
             if (gamepad1.y) {
                 teleopMode = TeleopMode.BUCKET_SCORE;
                 arm.setTeleopMode(teleopMode);
@@ -376,7 +386,7 @@ public class MainTeleOp extends LinearOpMode {
                         wristAngle = WristAngle.BUCKET_SCORE;
                     }
                 } else {
-                    if(arm.getArmTransistionStage() == 1) {
+                    if (arm.getArmTransistionStage() == 1) {
                         wristAngle = WristAngle.IDLE;
                         intake.setWristAngle(wristAngle);
                     } else {
@@ -395,8 +405,8 @@ public class MainTeleOp extends LinearOpMode {
                     intake.closed = !intake.closed;
                 }
 
-                if(intake.closed) {
-                    if(arm.armTransistionStage == 2) {
+                if (intake.closed) {
+                    if (arm.armTransistionStage == 2) {
 //                        intake.looseGrab();
                         intake.intake();
                     } else {
@@ -484,77 +494,97 @@ public class MainTeleOp extends LinearOpMode {
 
             /* *******************SPECIMEN SCORE******************* */
 
-            if (gamepad1.dpad_left && !autoPathingEnabled || (teleopMode == TeleopMode.INTAKE && intake.closed && arm.intakeSpecimen && gamepad1.left_bumper && arm.getArmTransistionStage() == 3)) {
+            if (gamepad1.dpad_left && !autoPathingEnabled || (!lbCooldown && teleopMode == TeleopMode.INTAKE && intake.closed && arm.intakeSpecimen && gamepad1.left_bumper && arm.getArmTransistionStage() == 3)) {
                 teleopMode = TeleopMode.SPECIMEN_SCORE;
-                arm.setTeleopMode(teleopMode);
-                arm.setAnimationType(AnimationType.NORMAL);
 
-                int delay = (int) Range.clip((params.SPEC_SCORE_INTAKE_DELAY - (int) specIntakeTimer.time(TimeUnit.MILLISECONDS)), 0, params.SPEC_SCORE_INTAKE_DELAY);
+                if (!useSpecArm) {
+                    arm.setTeleopMode(teleopMode);
+                    arm.setAnimationType(AnimationType.NORMAL);
+                    if (gamepad1.left_bumper) lbCooldown = true;
 
-                arm.setAnimationDelay(delay);
-                intake.intake();
-                intake.looseGrab();
+                    int delay = (int) Range.clip((params.SPEC_SCORE_INTAKE_DELAY - (int) specIntakeTimer.time(TimeUnit.MILLISECONDS)), 0, params.SPEC_SCORE_INTAKE_DELAY);
 
-                if(delay == 0) {
-                    wristAngle = WristAngle.SPECIMEN_SCORE_1;
-                }
+                    arm.setAnimationDelay(delay);
+                    intake.intake();
+                    intake.looseGrab();
+
+                    if (delay == 0) {
+                        wristAngle = WristAngle.SPECIMEN_SCORE_1;
+                    }
 //                grabAngle = GrabAngle.INVERTED;
-                intake.setWristAngle(wristAngle);
-                intake.setGrabAngle(grabAngle);
-                specimenInScorePos = false;
-                armPosSpecimen = params.ARM_SPECIMEN_POLE_2_START;
-                slidesPosSpecimen = params.SLIDES_SPECIMEN_POLE_2_START;
-                arm.setArmPositionSpecimen(armPosSpecimen);
-                arm.setSlidesPositionSpecimen(slidesPosSpecimen);
+                    intake.setWristAngle(wristAngle);
+                    intake.setGrabAngle(grabAngle);
+                    specimenInScorePos = false;
+                    armPosSpecimen = params.ARM_SPECIMEN_POLE_2_START;
+                    slidesPosSpecimen = params.SLIDES_SPECIMEN_POLE_2_START;
+                    arm.setArmPositionSpecimen(armPosSpecimen);
+                    arm.setSlidesPositionSpecimen(slidesPosSpecimen);
+                } else {
+                    arm.setTeleopMode(TeleopMode.CUSTOM_POSITION);
+                    arm.setArmCustomPosition(65);
+                    arm.setSlidesCustomPosition(4);
+                    arm.update(opModeIsActive());
+
+                    specimenArm.setTeleopMode(TeleopMode.SPECIMEN_SCORE);
+                    specimenArm.update(opModeIsActive());
+                }
             }
 
             if (teleopMode == TeleopMode.SPECIMEN_SCORE) {
-
-                if (gamepad1.right_bumper && !rBumperCooldown && params.INTAKE_TYPE == IntakeType.CLAW) {
-                    rBumperCooldown = true;
-                    if (intake.closed) {
-                        intake.closed = false;
-                    } else {
-                        intake.closed = true;
+                if (!useSpecArm) {
+                    if (gamepad1.right_bumper && !rBumperCooldown && params.INTAKE_TYPE == IntakeType.CLAW) {
+                        rBumperCooldown = true;
+                        if (intake.closed) {
+                            intake.closed = false;
+                        } else {
+                            intake.closed = true;
+                        }
                     }
-                }
 
-                if (!intake.closed) {
-                    intake.outtake();
-                } else {
-                    if (specimenInScorePos) {
-                        intake.intake();
+                    if (!intake.closed) {
+                        intake.outtake();
                     } else {
+                        if (specimenInScorePos) {
+                            intake.intake();
+                        } else {
 //                        intake.intake();
-                        intake.looseGrab();
+                            intake.looseGrab();
+                        }
                     }
-                }
 
-                int delay = (int) Range.clip((params.SPEC_SCORE_INTAKE_DELAY - (int) specIntakeTimer.time(TimeUnit.MILLISECONDS)), 0, params.SPEC_SCORE_INTAKE_DELAY);
+                    int delay = (int) Range.clip((params.SPEC_SCORE_INTAKE_DELAY - (int) specIntakeTimer.time(TimeUnit.MILLISECONDS)), 0, params.SPEC_SCORE_INTAKE_DELAY);
 
-                if(arm.getArmTransistionStage() != 1) {
-                    wristAngle = WristAngle.SPECIMEN_SCORE_1;
-                    intake.setWristAngle(wristAngle);
-                }
+//                if(arm.getArmTransistionStage() != 1) {
+//                    wristAngle = WristAngle.SPECIMEN_SCORE_1;
+//                    intake.setWristAngle(wristAngle);
+//                }
 
 //                    armPosSpecimen = params.ARM_SPECIMEN_POLE_2_SCORE;
 
-                if (gamepad1.right_trigger > .1) {
-                    slidesPosSpecimen = params.SLIDES_SPECIMEN_POLE_2_SCORE_CLAW;
-                    specimenInScorePos = true;
+                    if (gamepad1.right_trigger > .1) {
+                        slidesPosSpecimen = params.SLIDES_SPECIMEN_POLE_2_SCORE_CLAW;
+                        specimenInScorePos = true;
 
-                    wristAngle = WristAngle.SPECIMEN_SCORE_1;
-                    intake.setWristAngle(wristAngle);
-                } else if (gamepad1.left_trigger > .1) {
-                    slidesPosSpecimen = params.SLIDES_SPECIMEN_POLE_2_START;
-                    specimenInScorePos = false;
+                        wristAngle = WristAngle.SPECIMEN_SCORE_2;
+                        intake.setWristAngle(wristAngle);
+                    } else if (gamepad1.left_trigger > .1) {
+                        slidesPosSpecimen = params.SLIDES_SPECIMEN_POLE_2_START;
+                        specimenInScorePos = false;
 
-                    wristAngle = WristAngle.SPECIMEN_SCORE_1;
-                    intake.setWristAngle(wristAngle);
+                        wristAngle = WristAngle.SPECIMEN_SCORE_1;
+                        intake.setWristAngle(wristAngle);
+                    }
+
+                    armPosSpecimen = arm.setArmPositionSpecimen(armPosSpecimen);
+                    slidesPosSpecimen = arm.setSlidesPositionSpecimen(slidesPosSpecimen);
+                } else {
+                    if (gamepad1.right_bumper && !rBumperCooldown) {
+                        rBumperCooldown = true;
+                        specimenArm.toggleClaw();
+                    }
+
+                    specimenArm.setFixSpec(gamepad1.right_trigger > .1);
                 }
-
-                armPosSpecimen = arm.setArmPositionSpecimen(armPosSpecimen);
-                slidesPosSpecimen = arm.setSlidesPositionSpecimen(slidesPosSpecimen);
             }
 
             /* *******************RESET IMU & POSITION******************* */
@@ -583,7 +613,7 @@ public class MainTeleOp extends LinearOpMode {
                 arm.setArmPower(params.ARM_POWER_DEFAULT);
             }
 
-            if(gamepad1.share) {
+            if (gamepad1.share) {
                 arm.setAnimationType(AnimationType.NONE);
             }
 
@@ -696,8 +726,17 @@ public class MainTeleOp extends LinearOpMode {
             }
 
             if (!gamepad2.a) g2ACooldown = false;
+            if (!gamepad1.left_bumper) lbCooldown = false;
 
+            if (teleopMode != TeleopMode.SPECIMEN_SCORE && (teleopMode != TeleopMode.INTAKE && arm.intakeSpecimen)) {
+                specimenArm.setTeleopMode(TeleopMode.IDLE);
 
+                telemetry.addLine("set spec arm");
+            }
+
+            specimenArm.update(opModeIsActive());
+
+            mTelemetry.addData("lbc: ", lbCooldown);
             mTelemetry.addData("slides 1 current: ", robot.slidesMotor1.getCurrent(CurrentUnit.AMPS));
             mTelemetry.addData("slides 2 current: ", robot.slidesMotor2.getCurrent(CurrentUnit.AMPS));
 //            mTelemetry.addData("slides 1 power", robot.slidesMotor1.getPower());

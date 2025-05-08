@@ -30,6 +30,9 @@ public class HWProfile {
     public SimpleServo clawServo = null;
     public SimpleServo diffyLeft = null;
     public SimpleServo diffyRight = null;
+    public LessSimpleServo specArmServo = null;
+    public LessSimpleServo specClawPivot = null;
+    public LessSimpleServo specClawServo = null;
     public IMU.Parameters imuParams;
     public VoltageSensor voltageSensor;
     public Rev2mDistanceSensor distanceOne;
@@ -117,14 +120,21 @@ public class HWProfile {
 
         clawServo = new SimpleServo(hwMap, "clawServo", 0, 180, AngleUnit.DEGREES);
         clawServo.setInverted(false);
-        clawServo.disable();
 
         diffyLeft = new SimpleServo(hwMap, "diffyLeft", 0, 320, AngleUnit.DEGREES);
         diffyLeft.setInverted(false);
 
         diffyRight = new SimpleServo(hwMap, "diffyRight", 0, 320, AngleUnit.DEGREES);
         diffyRight.setInverted(true);
-        diffyRight.disable();
+
+        specArmServo = new LessSimpleServo(hwMap, "specArmServo", 0, 180, AngleUnit.DEGREES);
+        specArmServo.setInverted(false);
+
+        specClawPivot = new LessSimpleServo(hwMap, "specClawPivot", 0, 320, AngleUnit.DEGREES);
+        specClawPivot.setInverted(true);
+
+        specClawServo = new LessSimpleServo(hwMap, "specClawServo", 0, 320, AngleUnit.DEGREES);
+        specClawServo.setInverted(true);
 
         otos = hwMap.get(SparkFunOTOS.class, "otos");
         otos.calibrateImu();

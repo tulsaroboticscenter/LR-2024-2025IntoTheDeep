@@ -33,52 +33,50 @@ public class BrokenBot extends LinearOpMode {
 //        arm.setAutoMode(true);
 //        arm.useMotionProfile(true);
 
-        while(opModeIsActive()) {
-            if(gamepad1.dpad_up) {
+        while (opModeIsActive()) {
+            if (gamepad1.dpad_up) {
                 robot.motorLF.setPower(1);
             } else {
                 robot.motorLF.setPower(0);
             }
 
-            if(gamepad1.dpad_down) {
+            if (gamepad1.dpad_down) {
                 robot.motorRF.setPower(1);
             } else {
                 robot.motorRF.setPower(0);
             }
 
-            if(gamepad1.dpad_left) {
+            if (gamepad1.dpad_left) {
                 robot.motorRR.setPower(1);
             } else {
                 robot.motorRR.setPower(0);
             }
 
-            if(gamepad1.dpad_right) {
+            if (gamepad1.dpad_right) {
                 robot.motorLR.setPower(1);
             } else {
                 robot.motorLR.setPower(0);
             }
 
-            if(gamepad1.a) {
-//                currentMode = TeleopMode.CUSTOM_POSITION;
-//                arm.setTeleopMode(currentMode);
-//                arm.setArmCustomPosition(45);
+            if (gamepad1.a) {
+                robot.specArmServo.turnToAngle(0);
             } else if (gamepad1.b) {
-//                currentMode = TeleopMode.CUSTOM_POSITION;
-//                arm.setTeleopMode(currentMode);
-//                arm.setArmCustomPosition(15);
+                robot.specArmServo.turnToAngle(90);
+            } else if(gamepad1.y) {
+                robot.specArmServo.disable();
             }
 
-            if(gamepad1.right_bumper) {
+            if (gamepad1.right_bumper) {
 //                robot.clawServo.turnToAngle(0);
-            } else if(gamepad1.left_bumper) {
+            } else if (gamepad1.left_bumper) {
 //                robot.clawServo.turnToAngle(70);
             }
 
             robot.diffyRight.turnToAngle(45);
 
-            if(gamepad1.x) {
+            if (gamepad1.x) {
 //                robot.poleToucher.turnToAngle(0);
-            } else if(gamepad1.y) {
+            } else if (gamepad1.y) {
 //                robot.poleToucher.turnToAngle(90);
             }
 

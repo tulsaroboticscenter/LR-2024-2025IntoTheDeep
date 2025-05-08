@@ -5,11 +5,11 @@ import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-import org.firstinspires.ftc.teamcode.pedroPathing.follower.Follower;
-import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierLine;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Path;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
+import org.firstinspires.ftc.teamcode.bedroBathing.follower.Follower;
+import org.firstinspires.ftc.teamcode.bedroBathing.localization.Pose;
+import org.firstinspires.ftc.teamcode.bedroBathing.pathGeneration.BezierLine;
+import org.firstinspires.ftc.teamcode.bedroBathing.pathGeneration.Path;
+import org.firstinspires.ftc.teamcode.bedroBathing.pathGeneration.Point;
 
 /**
  * This is the StraightBackAndForth autonomous OpMode. It runs the robot in a specified distance

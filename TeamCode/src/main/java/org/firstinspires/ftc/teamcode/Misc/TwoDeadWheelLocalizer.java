@@ -50,6 +50,7 @@ public final class TwoDeadWheelLocalizer implements Localizer {
         par = new OverflowEncoder(new RawEncoder(hardwareMap.get(DcMotorEx.class, "motorLF")));
         perp = new OverflowEncoder(new RawEncoder(hardwareMap.get(DcMotorEx.class, "motorRR")));
         otos = hardwareMap.get(SparkFunOTOS.class, "otos");
+        otos.resetTracking();
         otos.calibrateImu();
         otos.resetTracking();
         otos.setAngularUnit(AngleUnit.RADIANS);

@@ -15,7 +15,7 @@ import org.firstinspires.ftc.teamcode.Enums.IntakeType;
 import org.firstinspires.ftc.teamcode.Enums.TeleopMode;
 import org.firstinspires.ftc.teamcode.Hardware.KookyMotionProfile.MotionProfile;
 import org.firstinspires.ftc.teamcode.Hardware.KookyMotionProfile.ProfileConstraints;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.MathFunctions;
+import org.firstinspires.ftc.teamcode.bedroBathing.pathGeneration.MathFunctions;
 
 import java.util.concurrent.TimeUnit;
 
@@ -484,6 +484,7 @@ public class ArmSubsystem extends Subsystem {
                         armDeg = params.ARM_INTAKE_POS;
                     } else {
                         armDeg = 0;
+//                        armDeg = 2.5;
                     }
                 }
 
@@ -508,7 +509,7 @@ public class ArmSubsystem extends Subsystem {
                     } else {
                         setArmTargetPosition(params.ARM_AUTO_SPECIMEN_INTAKE + params.ARM_SPECIMEN_INTAKE_OFFSET);
                     }
-                    setTargetSlidesPosition(params.SLIDES_AUTO_SPECIMEN_INTAKE);
+                    setTargetSlidesPosition(params.SLIDES_AUTO_SPECIMEN_INTAKE + intakePos);
                 }
             }
 
@@ -618,7 +619,7 @@ public class ArmSubsystem extends Subsystem {
             animationType = AnimationType.NONE;
 
             setArmTargetPosition(armCustomPos);
-            setSlidesCustomPosition(slidesCustomPos);
+            setTargetSlidesPosition(slidesCustomPos);
 
             animateTransition();
         } else if (currentMode == TeleopMode.TOUCH_POLE_AUTO) {
@@ -685,7 +686,7 @@ public class ArmSubsystem extends Subsystem {
         }
 
         if (currentMode == TeleopMode.BUCKET_SCORE && bucketScore == 2 && !scoreReachedPos && !slidesGoingDown && armTransistionStage == 3) {
-            slidesPID.setPID(SlidesKpScore, SlidesKiScore, SlidesKdScore);
+//            slidesPID.setPID(SlidesKpScore, SlidesKiScore, SlidesKdScore);
         } else {
             slidesPID.setPID(SlidesKp, SlidesKi, SlidesKd);
         }

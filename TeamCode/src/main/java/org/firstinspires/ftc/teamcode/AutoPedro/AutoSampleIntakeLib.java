@@ -3,8 +3,7 @@ package org.firstinspires.ftc.teamcode.AutoPedro;
 import com.qualcomm.robotcore.hardware.Gamepad;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Vector;
+import org.firstinspires.ftc.teamcode.bedroBathing.localization.Pose;
 
 import java.util.HashSet;
 
@@ -22,6 +21,8 @@ public class AutoSampleIntakeLib {
     public AutoSampleIntakeLib(Telemetry telemetry, Gamepad gp) {
         this.telemetry = telemetry;
         this.gp = gp;
+
+        this.sampleLocations.add(new Pose(10*1.5, 10*1.5, Math.toRadians(90)));
     }
 
     public void displayInfo() {

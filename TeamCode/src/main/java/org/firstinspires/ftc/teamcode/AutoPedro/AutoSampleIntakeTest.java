@@ -2,23 +2,21 @@ package org.firstinspires.ftc.teamcode.AutoPedro;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 
 import org.firstinspires.ftc.teamcode.Enums.AutoLocation;
 import org.firstinspires.ftc.teamcode.Enums.GrabAngle;
-import org.firstinspires.ftc.teamcode.Enums.GrabStyle;
 import org.firstinspires.ftc.teamcode.Enums.TeleopMode;
 import org.firstinspires.ftc.teamcode.Enums.WristAngle;
 import org.firstinspires.ftc.teamcode.Hardware.ArmSubsystem;
 import org.firstinspires.ftc.teamcode.Hardware.HWProfile;
 import org.firstinspires.ftc.teamcode.Hardware.IntakeSubsystem;
 import org.firstinspires.ftc.teamcode.Hardware.Params;
-import org.firstinspires.ftc.teamcode.pedroPathing.follower.Follower;
-import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.BezierCurve;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Path;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathBuilder;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.Point;
+import org.firstinspires.ftc.teamcode.bedroBathing.follower.Follower;
+import org.firstinspires.ftc.teamcode.bedroBathing.localization.Pose;
+import org.firstinspires.ftc.teamcode.bedroBathing.pathGeneration.BezierCurve;
+import org.firstinspires.ftc.teamcode.bedroBathing.pathGeneration.Path;
+import org.firstinspires.ftc.teamcode.bedroBathing.pathGeneration.PathBuilder;
+import org.firstinspires.ftc.teamcode.bedroBathing.pathGeneration.Point;
 
 import java.util.HashSet;
 
@@ -50,7 +48,7 @@ public class AutoSampleIntakeTest extends LinearOpMode {
 
         Pose sampleGrabOffset = new Pose(39.6, 3);
         autoManager.setSpeed(1);
-        autoManager.buildPaths(AutoLocation.PEDRO_LEFT_4_0_V1);
+        autoManager.buildPaths(AutoLocation.PEDRO_LEFT_SAMPLE_V1);
 
         follower.setPose(autoManager.start_4_0_V1);
         follower.setStartingPose(autoManager.start_4_0_V1);
@@ -119,7 +117,7 @@ public class AutoSampleIntakeTest extends LinearOpMode {
             autoManager.safeSleep(500);
 
             autoManager.setSpeed(.75);
-            autoManager.buildPaths(AutoLocation.PEDRO_LEFT_4_0_V1); // pedro bug, workaround
+            autoManager.buildPaths(AutoLocation.PEDRO_LEFT_SAMPLE_V1); // pedro bug, workaround
             autoManager.runPath(autoManager.bucketScoreFromSubPath);
             autoManager.safeSleep(750);
             intake.outtake();

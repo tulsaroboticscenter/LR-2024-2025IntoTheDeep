@@ -16,9 +16,9 @@ import org.firstinspires.ftc.teamcode.Hardware.ArmSubsystem;
 import org.firstinspires.ftc.teamcode.Hardware.HWProfile;
 import org.firstinspires.ftc.teamcode.Hardware.IntakeSubsystem;
 import org.firstinspires.ftc.teamcode.Hardware.Params;
-import org.firstinspires.ftc.teamcode.pedroPathing.follower.Follower;
-import org.firstinspires.ftc.teamcode.pedroPathing.localization.Pose;
-import org.firstinspires.ftc.teamcode.pedroPathing.pathGeneration.PathChain;
+import org.firstinspires.ftc.teamcode.bedroBathing.follower.Follower;
+import org.firstinspires.ftc.teamcode.bedroBathing.localization.Pose;
+import org.firstinspires.ftc.teamcode.bedroBathing.pathGeneration.PathChain;
 
 import java.util.concurrent.TimeUnit;
 
@@ -72,7 +72,7 @@ public class HeadingTest extends LinearOpMode {
     private boolean pathStarted = true;
     private PathChain currentPath;
     private int lastAutoState = 0;
-    private AutoLocation autoLocation = AutoLocation.PEDRO_LEFT_4_0_V1;
+    private AutoLocation autoLocation = AutoLocation.PEDRO_LEFT_SAMPLE_V1;
     private int nextAutoState = 0;
     private final String autoName = "Left Intake Autonomous: PEDRO PATHING";
     private Telemetry telemetryA;
