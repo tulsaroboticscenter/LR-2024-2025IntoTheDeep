@@ -29,6 +29,11 @@ public class IntakeSubsystem extends Subsystem {
     private double customWristAngle = 0;
     private double currentWristAngle = 0;
     private double currentPivotAngle = 0;
+
+    private double oldDiffyRServoAngle = -180;
+    private double oldDiffyLServoAngle = -180;
+    private double oldClawServoAngle = -180;
+
     private boolean pedroAuto = false;
 
     public void setPedroAuto(boolean set) {
@@ -126,31 +131,47 @@ public class IntakeSubsystem extends Subsystem {
         currentIntakeMode = IntakeMode.LOOSE_GRAB;
     }
 
+    private void setClawPos(double newPos) {
+        if(oldClawServoAngle != newPos) robot.clawServo.turnToAngle(newPos);
+
+        oldClawServoAngle = newPos;
+    }
+    private void setDiffyRightPos(double newPos) {
+        if(oldDiffyRServoAngle != newPos) robot.diffyRight.turnToAngle(newPos);
+
+        oldDiffyRServoAngle = newPos;
+    }
+    private void setDiffyLeftPos(double newPos) {
+        if(oldDiffyLServoAngle != newPos) robot.diffyLeft.turnToAngle(newPos);
+
+        oldDiffyLServoAngle = newPos;
+    }
+
     public void update(boolean opModeActive) {
         if(!opModeActive) return;
 
         if (currentIntakeMode == IntakeMode.INTAKE) {
             if (grabStyle == GrabStyle.OUTSIDE_GRAB) {
-                robot.clawServo.turnToAngle(params.CLAW_OUTSIDE_GRAB_ANGLE);
+                setClawPos(params.CLAW_OUTSIDE_GRAB_ANGLE);
             } else if (grabStyle == GrabStyle.INSIDE_GRAB) {
-                robot.clawServo.turnToAngle(params.CLAW_INSIDE_GRAB_ANGLE);
+                setClawPos(params.CLAW_INSIDE_GRAB_ANGLE);
             }
         } else if (currentIntakeMode == IntakeMode.OUTTAKE) {
             if (grabStyle == GrabStyle.OUTSIDE_GRAB) {
                 if (!shortRange) {
-                    robot.clawServo.turnToAngle(params.CLAW_OUTSIDE_DROP_ANGLE);
+                    setClawPos(params.CLAW_OUTSIDE_DROP_ANGLE);
                 } else {
                     if(!pedroAuto) {
-                        robot.clawServo.turnToAngle(params.CLAW_OUTSIDE_DROP_ANGLE_SHORT);
+                        setClawPos(params.CLAW_OUTSIDE_DROP_ANGLE_SHORT);
                     } else {
-                        robot.clawServo.turnToAngle(params.CLAW_OUTSIDE_DROP_ANGLE_SHORT_PEDRO_AUTO);
+                        setClawPos(params.CLAW_OUTSIDE_DROP_ANGLE_SHORT_PEDRO_AUTO);
                     }
                 }
             } else if (grabStyle == GrabStyle.INSIDE_GRAB) {
-                robot.clawServo.turnToAngle(params.CLAW_INSIDE_DROP_ANGLE);
+                setClawPos(params.CLAW_INSIDE_DROP_ANGLE);
             }
         } else if (currentIntakeMode == IntakeMode.LOOSE_GRAB) {
-            robot.clawServo.turnToAngle(params.CLAW_LOOSE_GRAB);
+            setClawPos(params.CLAW_LOOSE_GRAB);
         }
 
         if (wristAngle == WristAngle.DOWN) {
@@ -199,8 +220,8 @@ public class IntakeSubsystem extends Subsystem {
 
 //        opMode.telemetry.addData("fixedPivot: ", fixedPivotPos);
 
-        robot.diffyRight.turnToAngle(fixedWristPos - fixedPivotPos);
-        robot.diffyLeft.turnToAngle(fixedWristPos + fixedPivotPos);
+        setDiffyRightPos(fixedWristPos - fixedPivotPos);
+        setDiffyLeftPos(fixedWristPos + fixedPivotPos);
     }
 
     public WristAngle getWristAngle() {

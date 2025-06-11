@@ -4,6 +4,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.Enums.TeleopMode;
 
@@ -83,7 +84,7 @@ public class BrokenBot extends LinearOpMode {
 //            arm.update();
 
             robot.slidesMotor1.setPower(0);
-            robot.armMotor.setPower(0);
+            robot.armMotor1.setPower(0);
 
             telemetry.addData("VSensor: ", voltageSensor.getVoltage());
             telemetry.addData("imu2: ", robot.imu.getRobotYawPitchRollAngles().getYaw());

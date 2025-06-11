@@ -184,20 +184,16 @@ public class Path {
         followTangentReversed = false;
     }
 
-    public void setTangentHeadingInterpolation(double startHeading, double endHeading, double tangentLength) throws Exception {
+    public void setTangentHeadingInterpolation(double startHeading, double endHeading, double tangentLength) throws RuntimeException {
         isTangentHeadingInterpolation = true;
-        hasTangentialEndHeading = true;
 
         this.endHeading = endHeading;
         this.startHeading = startHeading;
         if (Objects.equals(this.pathType(), "DoubleHeadingTangentPath")) {
             ((DoubleHeadingTangentPath) this.curve).setTangentAttributes(startHeading, endHeading, tangentLength);
         } else {
-            throw new Exception("Use DoubleHeadingTangentPath!");
+            throw new RuntimeException("Use DoubleHeadingTangentPath!");
         }
-
-
-        followTangentReversed = false;
     }
 
     /**
@@ -283,10 +279,14 @@ public class Path {
      * @return returns the heading goal at the closest Point.
      */
     public double getClosestPointHeadingGoal() {
-        if (isTangentHeadingInterpolation && !Objects.equals(curve.pathType(), "DoubleHeadingTangentPath")) {
-            if (followTangentReversed)
-                return MathFunctions.normalizeAngle(closestPointTangentVector.getTheta() + Math.PI);
-            return closestPointTangentVector.getTheta();
+        if (isTangentHeadingInterpolation) {
+            if (Objects.equals(curve.pathType(), "DoubleHeadingTangentPath")) {
+                return getHeadingGoal(closestPointTValue);
+            } else {
+                if (followTangentReversed)
+                    return MathFunctions.normalizeAngle(closestPointTangentVector.getTheta() + Math.PI);
+                return closestPointTangentVector.getTheta();
+            }
         } else {
             return getHeadingGoal(closestPointTValue);
         }
@@ -304,16 +304,9 @@ public class Path {
                 return MathFunctions.normalizeAngle(((DoubleHeadingTangentPath) curve).getHeading(t));
             } else {
                 if (followTangentReversed) {
-                    if (hasTangentialEndHeading) {
-                        return MathFunctions.normalizeAngle(curve.getDerivative(t).getTheta() + Math.PI);
-                    } else {
-                        return MathFunctions.normalizeAngle(tangentialEndHeading); //todo: switch to normal end heading
-                    }
+                    return MathFunctions.normalizeAngle(curve.getDerivative(t).getTheta() + Math.PI);
                 } else {
-                    if (hasTangentialEndHeading)
-                        return MathFunctions.normalizeAngle(tangentialEndHeading);
-                    else
-                        return curve.getDerivative(t).getTheta();
+                    return curve.getDerivative(t).getTheta();
                 }
             }
         } else {

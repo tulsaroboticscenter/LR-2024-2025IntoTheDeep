@@ -15,7 +15,7 @@ import org.firstinspires.ftc.teamcode.bedroBathing.util.Drawing;
  * This is the TurnTuner OpMode. This tracks the turning movement of the robot and displays the
  * necessary ticks to inches multiplier. This displayed multiplier is what's necessary to scale the
  * robot's current angle in ticks to the specified angle in radians. So, to use this, run the
- * tuner, then pull/pushOld the robot to the specified angle using a protractor or lines on the ground.
+ * tuner, then pull/pushSamples the robot to the specified angle using a protractor or lines on the ground.
  * When you're at the end of the angle, record the ticks to inches multiplier. Feel free to run
  * multiple trials and average the results. Then, input the multiplier into the turning ticks to
  * radians in your localizer of choice.

@@ -38,6 +38,7 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.VoltageSensor;
+import com.qualcomm.robotcore.util.ElapsedTime;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
@@ -69,42 +70,35 @@ public class MecanumDrive {
 
         // drive model parameters
         public double inPerTick = .001975972178;
-        public double lateralInPerTick = 0.0013034093127193029;
-        public double trackWidthTicks = 6060.039890321857; //4069.1133742132733
+        public double lateralInPerTick = 0.0012871307833267438;
+        public double trackWidthTicks = 5854.493970725144; //4069.1133742132733
 
         // feedforward parameters (in tick units)
-        public double kS = 1.950373851769383;
-        public double kV = 0.00023239385344030344;
-        public double kA = .00005;
+        public double kS = 1.3459968885371651;
+        public double kV = 0.00027430153656954136;
+        public double kA = 0.0001;
 
         // path profile parameters (in inches)
-        public double maxWheelVel = 100;
-        public double maxWheelVelSlow = 10;
-        public double minProfileAccel = -30; //-30
-        public double minProfileAccelFast = -45; //-30
-        public double maxProfileAccel = 50; //50
-        public double maxProfileAccelSlow = 30; //50
+        public double maxWheelVel = 150;
+        public double maxWheelVelSlow = 10; // deprecated
+        public double minProfileAccel = -60; //-30
+        public double minProfileAccelFast = -45; // deprecated
+        public double maxProfileAccel = 150; //50
+        public double maxProfileAccelSlow = 30; //50 // deprecated
 
         // turn profile parameters (in radians)
         public double maxAngVel = Math.PI; // shared with path
         public double maxAngAccel = Math.PI;
 
         // path controller gains
-        public double axialGain = 7;
-        public double lateralGain = 11.0;
-        public double headingGain = 4; // shared with turn
+        public double axialGain = 3;
+        public double lateralGain = 8;
+        public double headingGain = 3;
 
-        public double axialVelGain = 2.4;
+        public double axialVelGain = 7;
         //        public double axialVelGain = 2.4;
-        public double lateralVelGain = 1.4;
-        public double headingVelGain = 1; // shared with turn
-
-        //sensing params
-        public double sampleXTargetIn = 1;
-        public double sampleYTargetIn = -4.6;
-        //        public double senseInMultX = 0.254065041;
-        public double senseInMultX = 0.304878049;
-        public double senseInMultY = 1.961168857;
+        public double lateralVelGain = 3;
+        public double headingVelGain = 4;
     }
 
     public static Params PARAMS = new Params();
@@ -127,7 +121,7 @@ public class MecanumDrive {
     public void setAutoSpeed(AutoSpeed autoSpeed) {
         this.autoSpeed = autoSpeed;
 
-        if(this.autoSpeed == AutoSpeed.FAST) {
+        if (this.autoSpeed == AutoSpeed.FAST) {
             defaultVelConstraint =
                     new MinVelConstraint(Arrays.asList(
                             kinematics.new WheelVelConstraint(PARAMS.maxWheelVel),
@@ -135,7 +129,7 @@ public class MecanumDrive {
                     ));
             defaultAccelConstraint =
                     new ProfileAccelConstraint(PARAMS.minProfileAccelFast, PARAMS.maxProfileAccel);
-        } else if(this.autoSpeed == AutoSpeed.STANDARD) {
+        } else if (this.autoSpeed == AutoSpeed.STANDARD) {
             defaultVelConstraint =
                     new MinVelConstraint(Arrays.asList(
                             kinematics.new WheelVelConstraint(PARAMS.maxWheelVel),
@@ -143,7 +137,7 @@ public class MecanumDrive {
                     ));
             defaultAccelConstraint =
                     new ProfileAccelConstraint(PARAMS.minProfileAccel, PARAMS.maxProfileAccel);
-        } else if(this.autoSpeed == AutoSpeed.SLOW) {
+        } else if (this.autoSpeed == AutoSpeed.SLOW) {
             defaultVelConstraint =
                     new MinVelConstraint(Arrays.asList(
                             kinematics.new WheelVelConstraint(PARAMS.maxWheelVelSlow),
@@ -172,7 +166,7 @@ public class MecanumDrive {
     }
 
     public AutoCorrectionType getCorrectionType() {
-        return  this.correctionType;
+        return this.correctionType;
     }
 
     public final LinkedList<Pose2d> poseHistory = new LinkedList<>();
@@ -282,7 +276,7 @@ public class MecanumDrive {
 
         // TODO: make sure your config has motors with these names (or change them)
         //   see https://ftc-docs.firstinspires.org/en/latest/hardware_and_software_configuration/configuring/index.html
-        if(!skipMotors) {
+        if (!skipMotors) {
             leftFront = hardwareMap.get(DcMotorEx.class, "motorLF");
             leftBack = hardwareMap.get(DcMotorEx.class, "motorLR");
             rightBack = hardwareMap.get(DcMotorEx.class, "motorRR");
@@ -390,7 +384,7 @@ public class MecanumDrive {
                 updateAction.run(p);
             }
 
-            if(cancelPath) {
+            if (cancelPath) {
                 cancelPath = false;
                 leftFront.setPower(0);
                 leftBack.setPower(0);
@@ -417,7 +411,7 @@ public class MecanumDrive {
                     pathRunning = false;
                     return false;
                 }
-            } else if(correctionType == AutoCorrectionType.TIME_BASED) {
+            } else if (correctionType == AutoCorrectionType.TIME_BASED) {
                 if (t >= timeTrajectory.duration) {
                     leftFront.setPower(0);
                     leftBack.setPower(0);
@@ -429,7 +423,7 @@ public class MecanumDrive {
                     pathRunning = false;
                     return false;
                 }
-            } else if(correctionType == AutoCorrectionType.FAST) {
+            } else if (correctionType == AutoCorrectionType.FAST) {
                 if (toEndError.position.norm() <= 5.5 || t >= timeTrajectory.duration) {
                     leftFront.setPower(0);
                     leftBack.setPower(0);
@@ -500,7 +494,6 @@ public class MecanumDrive {
             c.strokePolyline(xPoints, yPoints);
         }
     }
-
     public final class TurnAction implements Action {
         private final TimeTurn turn;
 
@@ -614,7 +607,7 @@ public class MecanumDrive {
     public TrajectoryActionBuilder actionBuilder(Pose2d beginPose) {
         return new TrajectoryActionBuilder(
                 TurnAction::new,
-                FollowTrajectoryAction::new,
+                FollowTrajectoryAsPathAction::new,
                 new TrajectoryBuilderParams(
                         1e-6,
                         new ProfileParams(
@@ -626,4 +619,173 @@ public class MecanumDrive {
                 defaultVelConstraint, defaultAccelConstraint
         );
     }
+
+    // Alternate trajectory follower for roadrunner using displacement trajectories (distance instead of time)
+    // to use, put at the bottom of RR 1.0's MecanumDrive file, and change actionBuilder to use it instead of FollowTrajectoryAction
+    // Created by j5155 from team 12087 based on https://rr.brott.dev/docs/v1-0/guides/path-following/
+    // Licensed under the BSD 3-Clause Clear License
+    // If you use this, I would love to know how it goes/what issues you encounter, I'm @j5155 on discord
+    public final class FollowTrajectoryAsPathAction implements Action {
+        public final DisplacementTrajectory dispTraj;
+        public final HolonomicController contr;
+
+        private final double[] xPoints, yPoints;
+        double disp; // displacement; target distance traveled in path
+
+        // only used for recording what end time should be
+        // to avoid the dreaded wiggle
+        public final ElapsedTime trajectoryRunningTime = new ElapsedTime();
+        public double targetTimeSeconds;
+        boolean initialized = false;
+
+        public FollowTrajectoryAsPathAction(TimeTrajectory t) {
+            dispTraj = new DisplacementTrajectory(t.path, t.profile.dispProfile);
+            contr = new HolonomicController( // PD to point/velocity controller
+                    PARAMS.axialGain,
+                    PARAMS.lateralGain,
+                    PARAMS.headingGain,
+                    PARAMS.axialVelGain,
+                    PARAMS.lateralVelGain,
+                    PARAMS.headingVelGain);
+            disp = 0;
+
+            targetTimeSeconds = t.duration;
+
+
+            // ONLY USED FOR PREVIEW
+            List<Double> disps = com.acmerobotics.roadrunner.Math.range( // returns evenly spaced values
+                    0,  // between 0 and the length of the path
+                    dispTraj.path.length(),
+                    Math.max(2, // minimum 2
+                            (int) Math.ceil(dispTraj.path.length() / 2) // max total of half the length of the path
+                    ));
+            // so really make 1 sample every 2 inches (I think)
+
+            // and then convert them into lists of doubles of x and y so they can be shown on dash
+            xPoints = new double[disps.size()];
+            yPoints = new double[disps.size()];
+            for (int i = 0; i < disps.size(); i++) {
+                Pose2d p = t.path.get(disps.get(i), 1).value();
+                xPoints[i] = p.position.x;
+                yPoints[i] = p.position.y;
+            }
+
+
+        }
+
+        @Override
+        public boolean run(@NonNull TelemetryPacket p) {
+            // needs to only run once
+            // idk if this is the most elegant solution
+            if (!initialized) {
+                trajectoryRunningTime.reset();
+                initialized = true;
+            }
+
+            if (updateAction != null) {
+                updateAction.run(p);
+            }
+
+            PoseVelocity2d robotVelRobot = updatePoseEstimate();
+
+            // find the closest position on the path to the robot's current position
+            // (using binary search? I think? project function is hard to understand)
+            // where "position on the path" is represent as disp or distance into the path
+            // so like for a 10 inch long path, if disp was 5 it would be halfway along the path
+            disp = dispTraj.project(pose.position, disp);
+
+
+            // check if the trajectory should end
+            // this logic is pretty much made up and doesnt really make sense
+            // and it wiggles occasionally
+            // but it does usually work
+            p.addLine("dispTraj position minus current " + dispTraj.get(dispTraj.length()).position.value().minus(pose.position).norm());
+            p.addLine("disp " + disp + " dispTraj length" + dispTraj.length());
+
+            // if robot within 2 in of end pose
+            if (dispTraj.get(dispTraj.length()).position.value().minus(pose.position).norm() < 2
+                    // or the closest position on the path is less then 2 inches away from the end of the path
+                    || (disp + 2) >= dispTraj.length()
+                    // or the trajectory has been running for 1 second more then it's suppposed to (this 1 second is weird)
+                    || (trajectoryRunningTime.seconds() >= targetTimeSeconds + 1)) {
+
+                // stop all the motors
+                leftFront.setPower(0);
+                leftBack.setPower(0);
+                rightBack.setPower(0);
+                rightFront.setPower(0);
+
+                // end the action
+                return false;
+            }
+
+            // ok so the trajectory shouldn't end yet
+
+            // at the start of the trajectory the mped velocity is probably 0
+            // so...never target the start of the path
+            // this should also hopefully boost accel a little bit
+            if (disp < 2) {
+                disp = 2;
+            }
+
+            // find the target pose and vel of the closest point on the path
+            Pose2dDual<Time> poseTarget = dispTraj.get(disp);
+
+            // calculate the command based on PD on the target pose and vel
+            PoseVelocity2dDual<Time> cmd = contr.compute(poseTarget, pose, robotVelRobot);
+
+            // convert it into wheel velocities with inverse kinematics
+            MecanumKinematics.WheelVelocities<Time> wheelVels = kinematics.inverse(cmd);
+            // find voltage for voltage compensation
+            double voltage = voltageSensor.getVoltage();
+
+            final MotorFeedforward feedforward = new MotorFeedforward(PARAMS.kS, PARAMS.kV / PARAMS.inPerTick, 0); // kA 0; ignore acceleration
+
+            // calculate the volts to send to each wheel based on the target velocity for the wheel
+            // divide it by the current voltage to get the power from 0-1
+            leftFront.setPower(feedforward.compute(wheelVels.leftFront) / voltage);
+            leftBack.setPower(feedforward.compute(wheelVels.leftBack) / voltage);
+            rightBack.setPower(feedforward.compute(wheelVels.rightBack) / voltage);
+            rightFront.setPower(feedforward.compute(wheelVels.rightFront) / voltage);
+
+            // log target to rr logs
+            FlightRecorder.write("TARGET_POSE", new PoseMessage(poseTarget.value()));
+
+            // show dash data
+            p.put("x", pose.position.x);
+            p.put("y", pose.position.y);
+            p.put("heading (deg)", Math.toDegrees(pose.heading.log()));
+
+            Pose2d error = poseTarget.value().minusExp(pose);
+            p.put("xError", error.position.x);
+            p.put("yError", error.position.y);
+            p.put("headingError (deg)", Math.toDegrees(error.heading.log()));
+
+            // only draw when active; only one drive action should be active at a time
+            Canvas c = p.fieldOverlay();
+            drawPoseHistory(c);
+
+            c.setStroke("#4CAF50");
+            Drawing.drawRobot(c, poseTarget.value());
+
+            c.setStroke("#3F51B5");
+            Drawing.drawRobot(c, pose);
+
+            c.setStroke("#4CAF50FF");
+            c.setStrokeWidth(1);
+            c.strokePolyline(xPoints, yPoints);
+
+            // continue running the action
+            return true;
+
+        }
+
+        @Override
+        public void preview(Canvas c) {
+            c.setStroke("#4CAF507A");
+            c.setStrokeWidth(1);
+            c.strokePolyline(xPoints, yPoints);
+        }
+    }
+
 }

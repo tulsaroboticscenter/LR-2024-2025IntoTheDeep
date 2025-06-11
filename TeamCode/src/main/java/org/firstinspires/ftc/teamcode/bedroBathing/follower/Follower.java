@@ -108,9 +108,10 @@ public class Follower {
 
     private long reachedParametricPathEndTime;
 
-    private double[] drivePowers;
-    private double[] teleopDriveValues;
+    //todo: make private
+    public double[] drivePowers;
 
+    private double[] teleopDriveValues;
     private ArrayList<Vector> velocities = new ArrayList<>();
     private ArrayList<Vector> accelerations = new ArrayList<>();
     private double criticalVoltage = 0;
@@ -158,19 +159,6 @@ public class Follower {
     public Follower(HardwareMap hardwareMap) {
         this.hardwareMap = hardwareMap;
         initialize();
-    }
-
-    /**
-     *
-     * This method tells the follower to slow down if the voltage
-     * of the robot goes below a certain point
-     *
-     * @param voltage The voltage at which the Pedro Pathing slows down (Ex. 10)
-     * @param setPower The power to slow down to (Ex. 0.4)
-     */
-    public void setSlowDownVoltage(double voltage, double setPower) {
-        this.criticalVoltage = voltage;
-        this.criticalVoltageDrivePower = setPower;
     }
 
     /**
@@ -508,7 +496,7 @@ public class Follower {
                     limitDrivePowers();
 
                     for (int i = 0; i < motors.size(); i++) {
-                        motors.get(i).setPower(drivePowers[i] * (12.0 / voltage));
+                        motors.get(i).setPower(drivePowers[i] * (13.0 / voltage));
                     }
                 } else {
                     if (isBusy) {
@@ -1077,5 +1065,9 @@ public class Follower {
      */
     public void resetIMU() throws InterruptedException {
         poseUpdater.resetIMU();
+    }
+
+    public double getMaxPower() {
+        return maxPower;
     }
 }

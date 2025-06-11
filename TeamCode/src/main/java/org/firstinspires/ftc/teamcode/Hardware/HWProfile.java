@@ -21,7 +21,8 @@ public class HWProfile {
     public IMU imu;
     public DcMotorEx slidesMotor1 = null;
     public DcMotorEx slidesMotor2 = null;
-    public DcMotorEx armMotor = null;
+    public DcMotorEx armMotor1 = null;
+    public DcMotorEx armMotor2= null;
     public DcMotorEx motorLF = null;
     public DcMotorEx motorLR = null;
     public DcMotorEx motorRF = null;
@@ -108,13 +109,21 @@ public class HWProfile {
         slidesMotor2.setPower(0);               // set motor power
 //        slidesMotor1.setMotorDisable();
 
-        armMotor = hwMap.get(DcMotorEx.class, "armMotor");
-        armMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        armMotor.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
-        armMotor.setTargetPosition(0);
-        armMotor.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
-        armMotor.setPower(0);
+        armMotor1 = hwMap.get(DcMotorEx.class, "armMotor1");
+        armMotor1.setDirection(DcMotorSimple.Direction.REVERSE);
+        armMotor1.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        armMotor1.setTargetPosition(0);
+        armMotor1.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        armMotor1.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        armMotor1.setPower(0);
+
+        armMotor2 = hwMap.get(DcMotorEx.class, "armMotor2");
+        armMotor2.setDirection(DcMotorSimple.Direction.REVERSE);
+        armMotor2.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER);
+        armMotor2.setTargetPosition(0);
+        armMotor2.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        armMotor2.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        armMotor2.setPower(0);
 
         armEncoder = hwMap.get(AnalogInput.class, "armEncoder");
 
@@ -141,6 +150,12 @@ public class HWProfile {
         otos.setAngularUnit(AngleUnit.RADIANS);
 
         voltageSensor = hwMap.voltageSensor.iterator().next();
+
+        List<LynxModule> modules = hwMap.getAll(LynxModule.class);
+
+        for(LynxModule hub : modules) {
+            hub.setBulkCachingMode(LynxModule.BulkCachingMode.AUTO);
+        }
 //
 //
 //        pinpoint = hwMap.get(GoBildaPinpointDriver.class,"pinpoint");

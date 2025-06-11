@@ -112,8 +112,6 @@ public class AutoManagerPedro {
         this.telemetry = new MultipleTelemetry(opMode.telemetry, FtcDashboard.getInstance().getTelemetry());
         this.robot = robot;
         this.params = new Params();
-
-        this.follower.setSlowDownVoltage(8, .4);
     }
 
     public void setSpecimenGrabFromSub(boolean set) {
@@ -1202,30 +1200,39 @@ public class AutoManagerPedro {
                     .setZeroPowerAccelerationMultiplier(5)
                     .setPathEndTValueConstraint(.9);
 
-            double depositHeading = -125;
+            double depositHeading = 45;
 
             depositToHP = new PathBuilder()
                     .addPath(new Path(
                             new BezierCurve(
                                     new Point(sampleGrabOffsetSpecimen.getX(), sampleGrabOffsetSpecimen.getY(), Point.CARTESIAN),
-                                    new Point(15, -15, Point.CARTESIAN),
-                                    new Point(5 /*2.75*/, -80/*19.5*/, Point.CARTESIAN)
+                                    new Point(25, -45, Point.CARTESIAN),
+                                    new Point(2 /*2.75*/, -90/*19.5*/, Point.CARTESIAN)
                             )
                     ))
-                    .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(depositHeading), .85)
+                    .addTemporalCallback(.6, () -> {
+                        arm.setTeleopMode(TeleopMode.CUSTOM_POSITION);
+                        arm.setArmCustomPosition(90);
+                        arm.setSlidesCustomPosition(1.5);
+                        arm.update(true);
+
+                        intake.setWristAngle(WristAngle.BUCKET_SCORE);
+                        intake.setGrabAngle(GrabAngle.INVERTED);
+                    })
+                    .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(depositHeading), 1)
                     .setPathEndTimeoutConstraint(0)
 //                    .setPathEndVelocityConstraint(50)
                     .setZeroPowerAccelerationMultiplier(5)
                     .setPathEndTValueConstraint(.9);
 
 
-            int sample1Y = -90;
-            int sample2Y = -98;
-            int sample3Y = -105;
+            int sample1Y = -87;
+            int sample2Y = -95;
+            int sample3Y = -103;
             int sampleOffset = 10;
-            int stopX = 15;
+            int stopX = 20;
             int stopS1X = stopX;
-            int afterSampleX = 45;
+            int afterSampleX = 50;
             int midZPM = 3;
             double pushSamplesHeading = 0;
             double pushSamplesStartHeading = 0;
@@ -1342,25 +1349,8 @@ public class AutoManagerPedro {
 
             pushSamples = new PathBuilder()
                     .addPath(pushSamplesStartPath)
-                    .addTemporalCallback(.25, () -> {
-//                        currentMode = TeleopMode.INTAKE;
-//                        arm.setTeleopMode(currentMode);
-//                        arm.setAnimationType(AnimationType.NONE);
-//                        arm.intakeSpecimen = true;
-//                        arm.update(opMode.opModeIsActive());
-//                        intake.setWristAngle(WristAngle.DOWN);
-                    })
                     .setZeroPowerAccelerationMultiplier(midZPM)
-//                    .setTangentHeadingInterpolation()
                     .setLinearHeadingInterpolation(Math.toRadians(pushSamplesStartHeading), Math.toRadians(pushSamplesHeading))
-//                    .addPath(new Path(
-//                            new BezierLine(
-//                                    new Point(stopX, sample1Y + sampleOffset, Point.CARTESIAN),
-//                                    new Point(35, sample1Y + sampleOffset, Point.CARTESIAN)
-//                            )
-//                    ))
-//                    .setZeroPowerAccelerationMultiplier(midZPM)
-//                    .setConstantHeadingInterpolation(Math.toRadians(pushSamplesHeading))
                     .addPath(new Path(
                             new BezierCurve(
                                     new Point(afterSampleX, sample1Y - sampleOffset, Point.CARTESIAN),
@@ -1368,9 +1358,6 @@ public class AutoManagerPedro {
                             )
                     ))
                     .setZeroPowerAccelerationMultiplier(midZPM)
-//                    .setPathEndVelocityConstraint(80)
-//                    .setTangentHeadingInterpolation()
-//                    .setLinearHeadingInterpolation(Math.toRadians(pushSamplesHeading), Math.toRadians(pushSamplesHeading), .25)
                     .setConstantHeadingInterpolation(Math.toRadians(pushSamplesHeading))
                     .addPath(new Path(
                             new BezierLine(
@@ -1405,28 +1392,21 @@ public class AutoManagerPedro {
                             new Point(afterSampleX - 5, sample3Y, Point.CARTESIAN),
                             new Point(8, -103, Point.CARTESIAN)
                     )))
-                    .addTemporalCallback(.25, () -> {
-//                        arm.setTeleopMode(TeleopMode.INTAKE);
-//                        arm.intakeSpecimen = true;
-//                        arm.update(opMode.opModeIsActive());
-
-//                        arm.intakeDownMode();
-//                        arm.update(opMode.opModeIsActive());
-
-//                        intake.setWristAngle(WristAngle.SPECIMEN_INTAKE);
-//                        intake.update(opMode.opModeIsActive());
-                    })
                     .setZeroPowerAccelerationMultiplier(3)
                     .setPathEndVelocityConstraint(2)
                     .setConstantHeadingInterpolation(Math.toRadians(pushSamplesHeading))
                     .setPathEndTValueConstraint(.9);
 
-            double grabY = -70;
-            double grabX = 1.5;
+            double grabY = -60;
+            double grabX = 0;
             int intakeTimeout = 0;
             double intakeEndVelo = 80;
-            double intakeZPM = 3;
+            double intakeZPM = 15;
+            double intakeEndT = .85;
+            double scoreEndT = .85;
+            double scoreEndV = 25;
             double intakeHeading = 0;
+            double scoreHeading = 0;
             Point intakeEndPoint = new Point(grabX, grabY, Point.CARTESIAN);
             Point intake1StartPoint = newPushSample3P2.build().getPath(newPushSample3P2.build().size() - 1).getLastControlPoint();
             double intake1StartHeading = newPushSample3P2.build().getPath(newPushSample3P2.build().size() - 1).getHeadingGoal(1);
@@ -1441,90 +1421,57 @@ public class AutoManagerPedro {
 //                                    new Point(grabX /*2.75*/, grabY/*19.5*/, Point.CARTESIAN)
                             )
                     ))
-                    .setPathEndVelocityConstraint(intakeEndVelo)
-//                    .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(intakeHeading))
-                    .setConstantHeadingInterpolation(Math.toRadians(0))
-                    .setZeroPowerAccelerationMultiplier(intakeZPM)
-//                    .setPathEndTValueConstraint(.99)
-                    .setPathEndTimeoutConstraint(intakeTimeout);
+//                    .setPathEndVelocityConstraint(intakeEndVelo)
+                    .setConstantHeadingInterpolation(Math.toRadians(0));
+//                    .setZeroPowerAccelerationMultiplier(intakeZPM)
+//                    .setPathEndTimeoutConstraint(intakeTimeout);
+
+            double intakeTangentLength = 10;
+            double scoreY = -35;
 
             specScore2 = new PathBuilder()
                     .addPath(new Path(
-                            new DoubleHeadingTangentPath(
+                            new BezierCurve(
                                     intakeSpec1.build().getPath(intakeSpec1.build().size() - 1).getLastControlPoint(),
-                                    new Point(scoreX /*2.75*/, initalScoreY-(specSize*1)/*19.5*/, Point.CARTESIAN)
+                                    new Point(7.5 /*2.75*/, -55/*19.5*/, Point.CARTESIAN),
+                                    new Point(scoreX /*2.75*/, scoreY/*19.5*/, Point.CARTESIAN)
                             )
                     ))
-                    .addParametricCallback(looseGrabP1, () -> {
-                        intake.looseGrab();
-                    })
-                    .addParametricCallback(looseGrabP2, () -> {
-                        intake.intake();
-                    })
-                    .setTangentHeadingInterpolation(Math.toRadians(0), Math.toRadians(0), 10)
-//                    .setLinearHeadingInterpolation(Math.toRadians(intakeHeading), Math.toRadians(intakeHeading))
-                    .setPathEndTValueConstraint(.9);
+//                    .setPathEndTValueConstraint(scoreEndT)
+//                    .setPathEndVelocityConstraint(scoreEndV)
+//                    .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(scoreHeading));
+                    .setConstantHeadingInterpolation(Math.toRadians(0));
 
             intakeSpec2 = new PathBuilder()
                     .addPath(new Path(
-                            new BezierLine(
+                            new DoubleHeadingTangentPath(
                                     specScore2.build().getPath(specScore2.build().size() - 1).getLastControlPoint(),
                                     intakeEndPoint
                             )
                     ))
-                    .setPathEndVelocityConstraint(intakeEndVelo)
-                    .setLinearHeadingInterpolation(Math.toRadians(intakeHeading), Math.toRadians(intakeHeading))
-                    .setZeroPowerAccelerationMultiplier(intakeZPM)
-                    .setPathEndTimeoutConstraint(intakeTimeout);
-//                    .addPath(new Path(
-//                            new BezierLine(
-//                                    intakeEndPoint,
-//                            )
-//                    ))
-//                    .setConstantHeadingInterpolation(Math.toRadians(180))
-//                    .setPathEndTimeoutConstraint(0)
-//                    .setZeroPowerAccelerationMultiplier(3)
-//                    .setPathEndTValueConstraint(.9);
+//                    .setPathEndTValueConstraint(intakeEndT)
+//                    .setPathEndVelocityConstraint(intakeEndVelo)
+//                    .setLinearHeadingInterpolation(Math.toRadians(intakeHeading), Math.toRadians(intakeHeading))
+//                    .setZeroPowerAccelerationMultiplier(intakeZPM)
+//                    .setPathEndTimeoutConstraint(intakeTimeout);
+                    .setConstantHeadingInterpolation(Math.toRadians(0));
 
             specScore3 = new PathBuilder()
                     .addPath(new Path(
-                            new BezierCurve(
+                            new DoubleHeadingTangentPath(
                                     intakeSpec2.build().getPath(intakeSpec2.build().size() - 1).getLastControlPoint(),
-                                    new Point(5 /*2.75*/, -50/*19.5*/, Point.CARTESIAN),
-                                    new Point(scoreX /*2.75*/, initalScoreY-(specSize*2)/*19.5*/, Point.CARTESIAN)
+//                                    new Point(5 /*2.75*/, -50/*19.5*/, Point.CARTESIAN),
+                                    new Point(scoreX /*2.75*/, scoreY/*19.5*/, Point.CARTESIAN)
                             )
                     ))
-                    .addParametricCallback(looseGrabP1, () -> {
-                        intake.looseGrab();
-                    })
-                    .addParametricCallback(looseGrabP2, () -> {
-                        intake.intake();
-                    })
-                    .setLinearHeadingInterpolation(Math.toRadians(intakeHeading), Math.toRadians(intakeHeading))
-                    .setPathEndTValueConstraint(.9);
+//                    .setPathEndTValueConstraint(scoreEndT)
+//                    .setPathEndVelocityConstraint(scoreEndV)
+//                    .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(scoreHeading));
+                    .setConstantHeadingInterpolation(Math.toRadians(0));
 
             intakeSpec3 = new PathBuilder()
-//                    .addPath(new Path(
-//                            new BezierLine(
-//                                    specScore3.build().getPath(specScore3.build().size() - 1).getLastControlPoint(),
-//                                    new Point(scoreX /*2.75*/, -40/*19.5*/, Point.CARTESIAN)
-//                            )
-//                    ))
-//                    .addParametricCallback(.89, () -> {
-//                        intake.outtake();
-//                        intake.setWristAngle(WristAngle.SPECIMEN_INTAKE);
-//
-//                        intake.setShortRange(true);
-//                        currentMode = TeleopMode.INTAKE;
-//                        arm.setTeleopMode(currentMode);
-//
-//                        arm.update(opMode.opModeIsActive());
-//                        intake.update(opMode.opModeIsActive());
-//                    })
-//                    .setConstantHeadingInterpolation(Math.toRadians(180))
-//                    .setPathEndTimeoutConstraint(0)
                     .addPath(new Path(
-                            new BezierLine(
+                            new DoubleHeadingTangentPath(
                                     new Point(scoreX /*2.75*/, -40/*19.5*/, Point.CARTESIAN),
                                     intakeEndPoint
                             )
@@ -1532,83 +1479,65 @@ public class AutoManagerPedro {
                     .addParametricCallback(0, () -> {
                         intake.setGrabAngle(GrabAngle.VERTICAL_GRAB);
                     })
-                    .setPathEndVelocityConstraint(intakeEndVelo)
-                    .setLinearHeadingInterpolation(Math.toRadians(intakeHeading), Math.toRadians(intakeHeading))
-                    .setZeroPowerAccelerationMultiplier(intakeZPM)
-                    .setPathEndTimeoutConstraint(intakeTimeout);
+//                    .setPathEndTValueConstraint(intakeEndT)
+//                    .setPathEndVelocityConstraint(intakeEndVelo)
+//                    .setLinearHeadingInterpolation(Math.toRadians(intakeHeading), Math.toRadians(intakeHeading))
+//                    .setZeroPowerAccelerationMultiplier(intakeZPM)
+//                    .setPathEndTimeoutConstraint(intakeTimeout);
+                    .setConstantHeadingInterpolation(Math.toRadians(0));
 
             specScore4 = new PathBuilder()
                     .addPath(new Path(
-                            new BezierCurve(
+                            new DoubleHeadingTangentPath(
                                     intakeSpec2.build().getPath(intakeSpec2.build().size() - 1).getLastControlPoint(),
-                                    new Point(5 /*2.75*/, -60/*19.5*/, Point.CARTESIAN),
-                                    new Point(scoreX /*2.75*/, initalScoreY-(specSize*3)/*19.5*/, Point.CARTESIAN)
+//                                    new Point(5 /*2.75*/, -60/*19.5*/, Point.CARTESIAN),
+                                    new Point(scoreX /*2.75*/, scoreY/*19.5*/, Point.CARTESIAN)
                             )
                     ))
-                    .addParametricCallback(looseGrabP1, () -> {
-                        intake.looseGrab();
-                    })
-                    .addParametricCallback(looseGrabP2, () -> {
-                        intake.intake();
-                    })
-                    .setLinearHeadingInterpolation(Math.toRadians(intakeHeading), Math.toRadians(intakeHeading))
-                    .setPathEndTValueConstraint(.9);
+//                    .setPathEndVelocityConstraint(scoreEndV)
+//                    .setPathEndTValueConstraint(scoreEndT)
+//                    .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(scoreHeading));
+                    .setConstantHeadingInterpolation(Math.toRadians(0));
 
             intakeSpec4 = new PathBuilder()
                     .addPath(new Path(
-                            new BezierLine(
+                            new DoubleHeadingTangentPath(
                                     specScore4.build().getPath(specScore4.build().size() - 1).getLastControlPoint(),
                                     intakeEndPoint
                             )
                     ))
-                    .setPathEndVelocityConstraint(intakeEndVelo)
-                    .setLinearHeadingInterpolation(Math.toRadians(intakeHeading), Math.toRadians(intakeHeading))
-                    .setZeroPowerAccelerationMultiplier(intakeZPM)
-                    .setPathEndTimeoutConstraint(intakeTimeout);
-//                    .addPath(new Path(
-//                            new BezierLine(
-//                                    intakeEndPoint,
-//                            )
-//                    ))
-//                    .setConstantHeadingInterpolation(Math.toRadians(180))
-//                    .setPathEndTimeoutConstraint(0)
-//                    .setZeroPowerAccelerationMultiplier(3)
-//                    .setPathEndTValueConstraint(.9);
+//                    .setPathEndTValueConstraint(intakeEndT)
+//                    .setPathEndVelocityConstraint(intakeEndVelo)
+//                    .setLinearHeadingInterpolation(Math.toRadians(intakeHeading), Math.toRadians(intakeHeading))
+//                    .setZeroPowerAccelerationMultiplier(intakeZPM)
+//                    .setPathEndTimeoutConstraint(intakeTimeout);
+                    .setConstantHeadingInterpolation(Math.toRadians(0));
 
             specScore5 = new PathBuilder()
                     .addPath(new Path(
-                            new BezierCurve(
+                            new DoubleHeadingTangentPath(
                                     intakeSpec2.build().getPath(intakeSpec2.build().size() - 1).getLastControlPoint(),
-                                    new Point(5 /*2.75*/, -50/*19.5*/, Point.CARTESIAN),
-                                    new Point(scoreX /*2.75*/, initalScoreY-(specSize*4)/*19.5*/, Point.CARTESIAN)
+//                                    new Point(5 /*2.75*/, -50/*19.5*/, Point.CARTESIAN),
+                                    new Point(scoreX /*2.75*/, scoreY/*19.5*/, Point.CARTESIAN)
                             )
                     ))
-                    .addParametricCallback(looseGrabP1, () -> {
-                        intake.looseGrab();
-                    })
-                    .addParametricCallback(looseGrabP2, () -> {
-                        intake.intake();
-                    })
-                    .setLinearHeadingInterpolation(Math.toRadians(intakeHeading), Math.toRadians(intakeHeading))
-                    .setPathEndTValueConstraint(.9);
+//                    .setPathEndVelocityConstraint(scoreEndV)
+//                    .setPathEndTValueConstraint(scoreEndT)
+//                    .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(scoreHeading));
+                    .setConstantHeadingInterpolation(Math.toRadians(0));
 
             specScore6 = new PathBuilder()
                     .addPath(new Path(
-                            new BezierCurve(
+                            new DoubleHeadingTangentPath(
                                     intakeSpec2.build().getPath(intakeSpec2.build().size() - 1).getLastControlPoint(),
-                                    new Point(5 /*2.75*/, -50/*19.5*/, Point.CARTESIAN),
-                                    new Point(scoreX /*2.75*/, initalScoreY-(specSize*5)/*19.5*/, Point.CARTESIAN)
+//                                    new Point(5 /*2.75*/, -50/*19.5*/, Point.CARTESIAN),
+                                    new Point(scoreX /*2.75*/, scoreY/*19.5*/, Point.CARTESIAN)
                             )
                     ))
-                    .addParametricCallback(looseGrabP1, () -> {
-                        intake.looseGrab();
-                    })
-                    .addParametricCallback(looseGrabP2, () -> {
-                        intake.intake();
-                    })
-                    .setLinearHeadingInterpolation(Math.toRadians(intakeHeading), Math.toRadians(intakeHeading))
-                    .setPathEndTimeoutConstraint(100)
-                    .setPathEndTValueConstraint(.9);
+//                    .setPathEndVelocityConstraint(scoreEndV)
+//                    .setPathEndTValueConstraint(scoreEndT)
+//                    .setLinearHeadingInterpolation(Math.toRadians(0), Math.toRadians(scoreHeading));
+                    .setConstantHeadingInterpolation(Math.toRadians(0));
 
             park = new PathBuilder()
                     .addPath(new Path(

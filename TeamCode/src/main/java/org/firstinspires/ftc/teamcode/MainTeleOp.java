@@ -14,6 +14,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.util.ElapsedTime;
 import com.qualcomm.robotcore.util.Range;
 
+import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.teamcode.Enums.AnimationType;
 import org.firstinspires.ftc.teamcode.Enums.GrabAngle;
@@ -36,7 +37,6 @@ import java.util.concurrent.TimeUnit;
 
 @TeleOp(name = "0: Main TeleOp", group = "0")
 public class MainTeleOp extends LinearOpMode {
-
     private DcMotorEx leftFront;
     private DcMotorEx leftRear;
     private DcMotorEx rightFront;
@@ -69,7 +69,9 @@ public class MainTeleOp extends LinearOpMode {
     private boolean g2LBCooldown = false;
     private boolean g2DpadLT = false;
     private boolean g2DpadRT = false;
+    private boolean rtCooldown = false;
     private boolean slowMode = false;
+    private boolean g2BCooldown = false;
     private GrabStyle grabStyle = GrabStyle.OUTSIDE_GRAB;
     private GrabAngle grabAngle = GrabAngle.VERTICAL_GRAB;
     private WristAngle wristAngle = WristAngle.BUCKET_SCORE;
@@ -81,9 +83,11 @@ public class MainTeleOp extends LinearOpMode {
     private double climbPos = 0;
     private boolean autoPathingEnabled = false;
     private boolean guideCooldown = false;
+    private boolean dropSample = false;
     private boolean g2ACooldown = false;
     private PathChain currentPath;
     private boolean runningPath = false;
+    private boolean shareCooldown = false;
     private boolean afterIntakeState = false;
     private double climbs = 0;
     private ElapsedTime timer = new ElapsedTime();
@@ -136,8 +140,7 @@ public class MainTeleOp extends LinearOpMode {
 
         robot.slidesMotor1.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         arm.setAutoMode(false);
-        arm.setSlidesMultiplier(params.SLIDE_MOTOR_POWER);
-
+        arm.setSlidesMultiplier(1);
 
         loopTime.reset();
         timer.reset();
@@ -153,10 +156,13 @@ public class MainTeleOp extends LinearOpMode {
                 teleopMode = TeleopMode.BUCKET_SCORE;
                 arm.setBucket(2);
             }
+        } else {
+            teleopMode = TeleopMode.IDLE;
         }
 
         specimenArm = new SpecimenArm(robot);
         specimenArm.setTeleopMode(TeleopMode.IDLE);
+        specimenArm.idleArmPowered(true);
 
         arm.setTeleopMode(teleopMode);
         arm.setAnimationType(AnimationType.NONE);
@@ -181,6 +187,9 @@ public class MainTeleOp extends LinearOpMode {
             double rotX = -gamepad1.left_stick_x * Math.cos(botHeading) - -gamepad1.left_stick_y * Math.sin(botHeading);
             double rotY = -gamepad1.left_stick_x * Math.sin(botHeading) + -gamepad1.left_stick_y * Math.cos(botHeading);
 
+            telemetry.addData("rot x: ", rotX);
+            telemetry.addData("rot y: ", rotY);
+
             if (slowMode) {
                 mecDrive.setDrivePowers(new PoseVelocity2d(new Vector2d(rotY, rotX), -gamepad1.right_stick_x));
             } else {
@@ -191,7 +200,15 @@ public class MainTeleOp extends LinearOpMode {
 
             /* *******************INTAKE******************* */
 
-            if (gamepad1.dpad_right && !autoPathingEnabled || (teleopMode == TeleopMode.SPECIMEN_SCORE && gamepad1.left_bumper && !lbCooldown && arm.getArmTransistionStage() == 3)) {
+            if(gamepad2.b && !g2BCooldown) {
+                g2BCooldown = true;
+
+                useSpecArm = !useSpecArm;
+            }
+
+            if(!gamepad2.b) g2BCooldown = false;
+
+            if ((gamepad1.dpad_right || (gamepad1.touchpad && useSpecArm)) && !autoPathingEnabled || (teleopMode == TeleopMode.SPECIMEN_SCORE && gamepad1.left_bumper && !lbCooldown)) {
                 teleopMode = TeleopMode.INTAKE;
                 grabAngle = GrabAngle.VERTICAL_GRAB;
 
@@ -206,11 +223,23 @@ public class MainTeleOp extends LinearOpMode {
                     intake.update(opModeIsActive());
                 } else {
                     arm.setTeleopMode(TeleopMode.CUSTOM_POSITION);
+                    arm.setAnimationType(AnimationType.NORMAL);
                     arm.setArmCustomPosition(65);
                     arm.setSlidesCustomPosition(4);
                     arm.update(opModeIsActive());
 
+                    intake.setWristAngle(WristAngle.BUCKET_SCORE);
+                    intake.setGrabAngle(GrabAngle.VERTICAL_GRAB);
+                    intake.update(opModeIsActive());
+
                     specimenArm.setTeleopMode(TeleopMode.INTAKE);
+                    specimenArm.openClaw();
+
+                    if(gamepad1.touchpad) {
+                        dropSample = true;
+                        arm.setAnimationDelay(500);
+                    }
+
                     specimenArm.update(opModeIsActive());
                 }
             }
@@ -262,11 +291,28 @@ public class MainTeleOp extends LinearOpMode {
 //                    }
                     }
                 } else {
-                    telemetry.addLine("update");
+                    if (!dropSample) {
+                        arm.setArmCustomPosition(65);
+                        arm.setSlidesCustomPosition(4);
 
-                    if (gamepad1.right_bumper && !rBumperCooldown) {
-                        rBumperCooldown = true;
-                        specimenArm.toggleClaw();
+                        if (gamepad1.right_bumper && !rBumperCooldown) {
+                            rBumperCooldown = true;
+                            specimenArm.toggleClaw();
+                        }
+                    } else {
+                        arm.setArmCustomPosition(90);
+                        arm.setSlidesCustomPosition(1.5);
+                        specimenArm.openClaw();
+
+                        if(gamepad1.left_bumper) {
+                            lbCooldown = true;
+                            dropSample = false;
+                        }
+
+                        if (gamepad1.right_bumper && !rBumperCooldown) {
+                            rBumperCooldown = true;
+                            intake.toggle();
+                        }
                     }
                 }
             } else {
@@ -281,9 +327,20 @@ public class MainTeleOp extends LinearOpMode {
                 intake.setGrabAngle(grabAngle);
                 wristAngle = WristAngle.DOWN;
                 intake.setWristAngle(wristAngle);
+                boolean skipTransistion = false;
+
+                if (teleopMode == TeleopMode.IDLE && arm.armTransistionStage == 3)
+                    skipTransistion = true;
+
                 teleopMode = TeleopMode.INTAKE;
                 arm.intakeSpecimen = false;
                 arm.setTeleopMode(teleopMode);
+
+                if (skipTransistion) {
+//                    arm.setAnimationType(AnimationType.NONE);
+//                    arm.update(true);
+                }
+
                 intakePosition = params.INTAKE_DEF_POS;
                 if (params.INTAKE_TYPE == IntakeType.CLAW) intake.outtake();
             } else if (!gamepad1.a) {
@@ -355,7 +412,7 @@ public class MainTeleOp extends LinearOpMode {
             if (gamepad1.y) {
                 teleopMode = TeleopMode.BUCKET_SCORE;
                 arm.setTeleopMode(teleopMode);
-//                arm.setAnimationType(AnimationType.FAST);
+                arm.setAnimationType(AnimationType.FAST);
                 grabAngle = GrabAngle.HORIZONTAL_GRAB;
 //                intake.looseGrab();
 //                arm.setAnimationType(AnimationType.FAST);
@@ -363,8 +420,11 @@ public class MainTeleOp extends LinearOpMode {
             }
             if (gamepad1.b) {
                 teleopMode = TeleopMode.BUCKET_SCORE;
-                grabAngle = GrabAngle.HORIZONTAL_GRAB;
                 arm.setTeleopMode(teleopMode);
+                arm.setAnimationType(AnimationType.FAST);
+                grabAngle = GrabAngle.HORIZONTAL_GRAB;
+//                intake.looseGrab();
+//                arm.setAnimationType(AnimationType.FAST);
                 arm.setBucket(1);
             }
 
@@ -396,6 +456,11 @@ public class MainTeleOp extends LinearOpMode {
                     }
                 }
 
+                if(gamepad1.right_trigger >= .1 && !rtCooldown) {
+                    rtCooldown = true;
+                    Params.SLIDES_HIGH_SCORE = !Params.SLIDES_HIGH_SCORE;
+                }
+
                 intake.setWristAngle(wristAngle);
                 intake.setGrabAngle(grabAngle);
 
@@ -421,8 +486,6 @@ public class MainTeleOp extends LinearOpMode {
                 } else {
                     arm.extendSlidesOuttake();
                 }
-
-                arm.setArmTipBucketScore(gamepad1.right_trigger > .1);
             }
 
             /* *******************IDLE******************* */
@@ -433,7 +496,7 @@ public class MainTeleOp extends LinearOpMode {
                 if (teleopMode == TeleopMode.INTAKE) {
                     wristAngle = WristAngle.IDLE;
                 } else {
-                    wristAngle = WristAngle.DOWN;
+                    wristAngle = WristAngle.IDLE;
                 }
                 grabAngle = GrabAngle.VERTICAL_GRAB;
 
@@ -441,6 +504,7 @@ public class MainTeleOp extends LinearOpMode {
                 intake.setGrabAngle(grabAngle);
 
                 teleopMode = TeleopMode.IDLE;
+                arm.idleExtend(false);
                 arm.setTeleopMode(teleopMode);
             }
 
@@ -449,6 +513,12 @@ public class MainTeleOp extends LinearOpMode {
             }
 
             if (teleopMode == TeleopMode.IDLE) {
+                if (gamepad1.right_stick_button && !RSB_cooldown) {
+                    RSB_cooldown = true;
+
+                    arm.idleExtend(!arm.isIdleExtended());
+                }
+
                 if (params.INTAKE_TYPE == IntakeType.TWO_WHEEL_INTAKE) {
                     if (gamepad1.right_bumper) {
                         intake.intake();
@@ -494,8 +564,10 @@ public class MainTeleOp extends LinearOpMode {
 
             /* *******************SPECIMEN SCORE******************* */
 
-            if (gamepad1.dpad_left && !autoPathingEnabled || (!lbCooldown && teleopMode == TeleopMode.INTAKE && intake.closed && arm.intakeSpecimen && gamepad1.left_bumper && arm.getArmTransistionStage() == 3)) {
+            if (gamepad1.dpad_left && !autoPathingEnabled || (!lbCooldown && teleopMode == TeleopMode.INTAKE && arm.intakeSpecimen && gamepad1.left_bumper)) {
                 teleopMode = TeleopMode.SPECIMEN_SCORE;
+
+                if (gamepad1.left_bumper) lbCooldown = true;
 
                 if (!useSpecArm) {
                     arm.setTeleopMode(teleopMode);
@@ -613,12 +685,27 @@ public class MainTeleOp extends LinearOpMode {
                 arm.setArmPower(params.ARM_POWER_DEFAULT);
             }
 
-            if (gamepad1.share) {
-                arm.setAnimationType(AnimationType.NONE);
+            if (gamepad1.share && !shareCooldown) {
+                shareCooldown = true;
+
+                useSpecArm = !useSpecArm;
             }
+
+            if(!gamepad1.share) shareCooldown = false;
 
             arm.update(opModeIsActive());
             intake.update(opModeIsActive());
+
+            if (teleopMode != TeleopMode.SPECIMEN_SCORE && (teleopMode != TeleopMode.INTAKE && arm.intakeSpecimen)) {
+                specimenArm.idleArmPowered(true);
+                specimenArm.setTeleopMode(TeleopMode.IDLE);
+                specimenArm.idleArmPowered(true);
+
+                telemetry.addLine("set spec arm");
+            }
+
+            specimenArm.update(opModeIsActive());
+
 
             intakePosition = MathFunctions.clamp(intakePosition, params.INTAKE_MIN_POS, params.INTAKE_MAX_POS);
 
@@ -725,27 +812,31 @@ public class MainTeleOp extends LinearOpMode {
                 telemetryDebug = !telemetryDebug;
             }
 
+            if(gamepad1.right_trigger <= .1) {
+                rtCooldown = false;
+            }
+
             if (!gamepad2.a) g2ACooldown = false;
             if (!gamepad1.left_bumper) lbCooldown = false;
 
-            if (teleopMode != TeleopMode.SPECIMEN_SCORE && (teleopMode != TeleopMode.INTAKE && arm.intakeSpecimen)) {
-                specimenArm.setTeleopMode(TeleopMode.IDLE);
-
-                telemetry.addLine("set spec arm");
-            }
-
-            specimenArm.update(opModeIsActive());
-
             mTelemetry.addData("lbc: ", lbCooldown);
-            mTelemetry.addData("slides 1 current: ", robot.slidesMotor1.getCurrent(CurrentUnit.AMPS));
-            mTelemetry.addData("slides 2 current: ", robot.slidesMotor2.getCurrent(CurrentUnit.AMPS));
+//            mTelemetry.addData("slides 1 current: ", robot.slidesMotor1.getCurrent(CurrentUnit.AMPS));
+//            mTelemetry.addData("slides 2 current: ", robot.slidesMotor2.getCurrent(CurrentUnit.AMPS));
+//            mTelemetry.addData("motorLR power: ", leftRear.getPower());
+//            mTelemetry.addData("motorLF power: ", leftFront.getPower());
+//            mTelemetry.addData("motorRF power: ", rightFront.getPower());
+//            mTelemetry.addData("motorRR power: ", rightRear.getPower());
 //            mTelemetry.addData("slides 1 power", robot.slidesMotor1.getPower());
 //            mTelemetry.addData("slides 2 power", robot.slidesMotor2.getPower());
 //            mTelemetry.addData("arm current: ", robot.armMotor.getCurrent(CurrentUnit.AMPS));
             mTelemetry.addData("hertz: ", lastLoopHertz);
+            mTelemetry.addData("dampen: ", arm.dampen);
             mTelemetry.addData("loop: ", loopTime.time(TimeUnit.MILLISECONDS));
             mTelemetry.addData("arm abs position: ", arm.getArmPosition());
             mTelemetry.addData("slides pos: ", arm.getSlidesPosition());
+//            mTelemetry.addData("arm motor1 amp: ", robot.armMotor1.getCurrent(CurrentUnit.AMPS));
+//            mTelemetry.addData("arm motor2 amp: ", robot.armMotor2.getCurrent(CurrentUnit.AMPS));
+            mTelemetry.addData("extension time: ", arm.extensionTime);
             mTelemetry.addData("slides out: ", arm.slidesOut);
             mTelemetry.addData("slides mult: ", arm.slidesMultPower);
             mTelemetry.addData("slides power: ", arm.slidesPower);

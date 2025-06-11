@@ -21,6 +21,12 @@ public class SpecimenArm extends Subsystem {
     private boolean afterFixSpec = false;
     private boolean idleArmPowered = false;
     private boolean idleIntakeClawClosed = false;
+    private boolean shortOpen = false;
+    private boolean autoMode = false;
+
+    private double armOldTarget = -180;
+    private double pivotOldTarget = -180;
+    private double clawOldTarget = -180;
 
     public SpecimenArm(HWProfile robot) {
         this.robot = robot;
@@ -46,64 +52,80 @@ public class SpecimenArm extends Subsystem {
         this.closed = !this.closed;
     }
 
-    private void setArmTargetPosition(double armTargetPosition) {
-        this.armTargetPosition = armTargetPosition;
-    }
-
-    private void animate() {
-        if (currentMode == TeleopMode.SPECIMEN_SCORE) {
-
-        }
-
-        if (animationComplete) {
-            robot.specArmServo.turnToAngle(armTargetPosition);
-        }
-    }
-
     private void skipAnimation() {
         this.skipAnimation = true;
         this.animationComplete = true;
     }
 
+    private void armSetPos(double newPos) {
+        if (armOldTarget != newPos) robot.specArmServo.turnToAngle(newPos);
+
+        armOldTarget = newPos;
+    }
+
+    private void setClawPos(double newPos) {
+        if (clawOldTarget != newPos) robot.specClawServo.turnToAngle(newPos);
+
+        clawOldTarget = newPos;
+    }
+
+    private void setPivotPos(double newPos) {
+        if (pivotOldTarget != newPos) robot.specClawPivot.turnToAngle(newPos);
+
+        pivotOldTarget = newPos;
+    }
+
     private void updateClaw() {
         if (closed) {
-            robot.specClawServo.turnToAngle(Params.SPECIMEN_CLAW_CLOSE);
+            setClawPos(Params.SPECIMEN_CLAW_CLOSE);
         } else {
-            robot.specClawServo.turnToAngle(Params.SPECIMEN_CLAW_OPEN);
+            if (shortOpen) {
+                setClawPos(Params.SPECIMEN_CLAW_OPEN_SHORT);
+            } else {
+                setClawPos(Params.SPECIMEN_CLAW_OPEN);
+            }
         }
+    }
+
+    public void setAutoMode(boolean set) {
+        this.autoMode = set;
     }
 
     @Override
     public void update(boolean opModeIsActive) {
         if (currentMode == TeleopMode.IDLE) {
-            if(!idleArmPowered) {
+            shortOpen = false;
+
+            if (!idleArmPowered) {
                 robot.specArmServo.disable();
             } else {
-                robot.specArmServo.turnToAngle(0);
+                armSetPos(Params.SPEC_ARM_INTAKE_POS);
             }
-            if(idleIntakeClawClosed) {
-                robot.specClawServo.turnToAngle(Params.SPECIMEN_CLAW_CLOSE_LOOSE);
+            if (idleIntakeClawClosed) {
+                setClawPos(Params.SPECIMEN_CLAW_CLOSE_LOOSE);
             } else {
-                robot.specClawServo.turnToAngle(Params.SPECIMEN_CLAW_OPEN);
+                setClawPos(Params.SPECIMEN_CLAW_OPEN);
             }
-            robot.specClawPivot.turnToAngle(Params.SPEC_CLAW_PIVOT_INTAKE);
+            setPivotPos(Params.SPEC_CLAW_PIVOT_INTAKE);
 
             if (teleopModeStart) skipAnimation();
         } else if (currentMode == TeleopMode.SPECIMEN_SCORE) {
+            shortOpen = true;
+
             if (!fixSpec) {
-                if (timer.time(TimeUnit.MILLISECONDS) <= 250) {
-//                robot.specClawPivot.turnToAngle(Params.SPEC_CLAW_PIVOT_INTAKE);
-                    if(!afterFixSpec) {
-                        robot.specClawServo.turnToAngle(Params.SPECIMEN_CLAW_CLOSE_LOOSE);
+                if (timer.time(TimeUnit.MILLISECONDS) <= 250 || teleopModeStart) {
+//                setPivotPos();(Params.SPEC_CLAW_PIVOT_INTAKE);
+                    if (!afterFixSpec) {
+                        setClawPos(Params.SPECIMEN_CLAW_CLOSE_LOOSE);
                     } else {
-                        robot.specClawServo.turnToAngle(Params.SPECIMEN_CLAW_CLOSE);
+                        setClawPos(Params.SPECIMEN_CLAW_CLOSE);
                     }
-                    robot.specArmServo.turnToAngle(Params.SPEC_ARM_SCORE_POS);
+                    armSetPos(Params.SPEC_ARM_SCORE_POS);
                     closed = true;
-                } else if (timer.time(TimeUnit.MILLISECONDS) > 250 && timer.time(TimeUnit.MILLISECONDS) <= 350) {
-                    robot.specClawPivot.turnToAngle(Params.SPEC_CLAW_PIVOT_OUTTAKE);
-                    robot.specClawServo.turnToAngle(Params.SPECIMEN_CLAW_CLOSE);
-                    robot.specArmServo.turnToAngle(Params.SPEC_ARM_SCORE_POS);
+                } else if (timer.time(TimeUnit.MILLISECONDS) > 250 && timer.time(TimeUnit.MILLISECONDS) <= 750) {
+                    setPivotPos(Params.SPEC_CLAW_PIVOT_OUTTAKE);
+                    setClawPos(Params.SPECIMEN_CLAW_CLOSE);
+                    armSetPos(Params.SPEC_ARM_SCORE_POS);
 
                 } else if (timer.time(TimeUnit.MILLISECONDS) > 1500) {
 //                    robot.specArmServo.disable();
@@ -113,24 +135,30 @@ public class SpecimenArm extends Subsystem {
             } else {
                 afterFixSpec = true;
 
-                robot.specClawPivot.turnToAngle(Params.SPEC_CLAW_PIVOT_INTAKE);
-                robot.specArmServo.turnToAngle(Params.SPEC_ARM_MID_POS);
-                robot.specClawServo.turnToAngle(Params.SPECIMEN_CLAW_CLOSE_LOOSE);
+                setPivotPos(Params.SPEC_CLAW_PIVOT_INTAKE);
+                armSetPos(Params.SPEC_ARM_MID_POS);
+                setClawPos(Params.SPECIMEN_CLAW_CLOSE_LOOSE);
 
                 timer.reset();
             }
 
 //            closed = true;
         } else if (currentMode == TeleopMode.INTAKE) {
+            shortOpen = false;
+
             if (timer.time(TimeUnit.MILLISECONDS) <= 150) {
-                robot.specClawPivot.turnToAngle(Params.SPEC_CLAW_PIVOT_MIDWAY);
-                robot.specClawServo.turnToAngle(Params.SPECIMEN_CLAW_OPEN);
+                setPivotPos(Params.SPEC_CLAW_PIVOT_MIDWAY);
+                setClawPos(Params.SPECIMEN_CLAW_OPEN);
 //                closed = false;
             } else if (timer.time(TimeUnit.MILLISECONDS) > 150 && timer.time(TimeUnit.MILLISECONDS) <= 500) {
-                robot.specArmServo.turnToAngle(Params.SPEC_ARM_INTAKE_POS);
+                armSetPos(Params.SPEC_ARM_INTAKE_POS);
             } else if (timer.time(TimeUnit.MILLISECONDS) > 600) {
-                robot.specClawPivot.turnToAngle(Params.SPEC_CLAW_PIVOT_INTAKE);
-                robot.specArmServo.turnToAngle(Params.SPEC_ARM_INTAKE_POS);
+                setPivotPos(Params.SPEC_CLAW_PIVOT_INTAKE);
+                if (autoMode) {
+                    armSetPos(Params.SPEC_ARM_INTAKE_POS_AUTO);
+                } else {
+                    armSetPos(Params.SPEC_ARM_INTAKE_POS);
+                }
 //                robot.specArmServo.disable();
 
                 updateClaw();

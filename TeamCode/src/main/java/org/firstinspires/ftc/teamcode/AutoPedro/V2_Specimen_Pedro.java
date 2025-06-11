@@ -4,6 +4,7 @@ import com.acmerobotics.dashboard.FtcDashboard;
 import com.acmerobotics.dashboard.config.Config;
 import com.acmerobotics.dashboard.telemetry.MultipleTelemetry;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.util.ElapsedTime;
@@ -33,6 +34,7 @@ import java.util.HashSet;
 import java.util.concurrent.TimeUnit;
 
 @Config
+@Disabled
 @Autonomous(name = "Specimen V2 Pedro", group = "0", preselectTeleOp = "0: Main TeleOp")
 public class V2_Specimen_Pedro extends LinearOpMode {
     private Follower follower;
@@ -124,6 +126,15 @@ public class V2_Specimen_Pedro extends LinearOpMode {
             }
             telemetryA.addData("x: ", follower.getPose().getX());
             telemetryA.addData("y: ", follower.getPose().getY());
+
+            if(follower.drivePowers != null) {
+                for (int i = 0; i < follower.drivePowers.length; i++) {
+                    telemetryA.addData("drivePower " + (i + 1) + ": ", follower.drivePowers[i]);
+                }
+            }
+
+            telemetryA.addData("power x: ", follower.getVelocity().getXComponent());
+            telemetryA.addData("power y: ", follower.getVelocity().getYComponent());
             telemetryA.update();
         }, arm, intake, robot);
         startPose = autoManager.start_Speci_V2;
@@ -299,7 +310,7 @@ public class V2_Specimen_Pedro extends LinearOpMode {
                     specCount++;
                 }
             }
-            park();
+//            park();
             times.put("scoring", individualMethodTimer.time(TimeUnit.MILLISECONDS));
 
             telemetryA.addData("time: ", time.time(TimeUnit.SECONDS) + 1);

@@ -3,7 +3,6 @@ package com.example.meepmeeptesting;
 import com.acmerobotics.roadrunner.geometry.Pose2d;
 
 import org.rowlandhall.meepmeep.MeepMeep;
-import org.rowlandhall.meepmeep.roadrunner.Constraints;
 import org.rowlandhall.meepmeep.roadrunner.DefaultBotBuilder;
 import org.rowlandhall.meepmeep.roadrunner.entity.RoadRunnerBotEntity;
 
@@ -13,9 +12,12 @@ public class MeepMeepTesting {
 
         RoadRunnerBotEntity myBot = new DefaultBotBuilder(meepMeep)
                 // Set bot constraints: maxVel, maxAccel, maxAngVel, maxAngAccel, track width
-                .setStartPose(new Pose2d(45, 13, Math.toRadians(360)))
                 .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 15)
-                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(45, 13, Math.toRadians(90)))
+                .followTrajectorySequence(drive -> drive.trajectorySequenceBuilder(new Pose2d(0, 0, 0))
+                        .forward(10)
+                        .back(10)
+                        .setReversed(true)
+                        .splineToLinearHeading(new Pose2d(45,35,Math.toRadians(45)), Math.toRadians(90))
                         .build());
 
 

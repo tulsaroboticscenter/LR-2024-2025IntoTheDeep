@@ -25,8 +25,8 @@ import org.firstinspires.ftc.robotcore.external.navigation.UnnormalizedAngleUnit
 @Config
 public final class TwoDeadWheelLocalizer implements Localizer {
     public static class Params {
-        public double parYTicks = -413.7175357358126; // -2190.839318035915 y position of the parallel encoder (in tick units)
-        public double perpXTicks = -452.58635839024345; // -1678.3218430716286 x position of the perpendicular encoder (in tick units)
+        public double parYTicks = -2105.1060221180655; // -2190.839318035915 y position of the parallel encoder (in tick units)
+        public double perpXTicks = 2448.418152764319; // -1678.3218430716286 x position of the perpendicular encoder (in tick units)
     }
 
     public static Params PARAMS = new Params();
@@ -56,8 +56,8 @@ public final class TwoDeadWheelLocalizer implements Localizer {
         otos.setAngularUnit(AngleUnit.RADIANS);
 
         // TODO: reverse encoder directions if needed
-        perp.setDirection(DcMotorSimple.Direction.FORWARD);
-        par.setDirection(DcMotorSimple.Direction.FORWARD);
+        perp.setDirection(DcMotorSimple.Direction.REVERSE);
+        par.setDirection(DcMotorSimple.Direction.REVERSE);
 
 //        this.imu = imu;
 

@@ -6,6 +6,7 @@ public class DoubleHeadingTangentPath extends BezierCurve {
     private Point startPoint, p1, p2, endPoint;
     private ArrayList<Point> controlPoints = new ArrayList<>();
     private double length = 0;
+    private boolean reversed = false;
 
 //    public DoubleHeadingTangentPath(Point start, Point end, double startHeading, double endHeading, double tangentLength) {
 //        this.startPoint = start;
@@ -44,6 +45,15 @@ public class DoubleHeadingTangentPath extends BezierCurve {
      * @param tangentLength        The tangent length.
      */
     public void setTangentAttributes(double startHeading, double endHeading, double tangentLength) {
+        double deltaX = this.endPoint.getX() -  this.startPoint.getX();
+        double deltaY = this.endPoint.getY() -  this.startPoint.getY();
+
+        reversed = Math.signum(deltaX) == -1 || Math.signum(deltaY) == -1;
+
+        if(reversed) {
+            tangentLength *= -1;
+        }
+
         Point startTangent = new Point(Math.cos(startHeading), Math.sin(startHeading)).scale(tangentLength);
         Point endTangent = new Point(Math.cos(endHeading), Math.sin(endHeading)).scale(tangentLength);
 
@@ -86,7 +96,11 @@ public class DoubleHeadingTangentPath extends BezierCurve {
                 + 6 * u * t * (p2.getY() - p1.getY())
                 + 3 * t * t * (endPoint.getY() - p2.getY());
 
-        return Math.atan2(dy, dx);
+        if(reversed) {
+            return Math.atan2(dy, dx) - Math.PI;
+        } else {
+            return Math.atan2(dy, dx);
+        }
     }
 
     @Override

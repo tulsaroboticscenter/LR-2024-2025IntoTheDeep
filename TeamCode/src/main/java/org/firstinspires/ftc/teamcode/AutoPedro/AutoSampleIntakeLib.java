@@ -22,7 +22,7 @@ public class AutoSampleIntakeLib {
         this.telemetry = telemetry;
         this.gp = gp;
 
-        this.sampleLocations.add(new Pose(10*1.5, 10*1.5, Math.toRadians(90)));
+//        this.sampleLocations.add(new Pose(10*1.5, 10*1.5, Math.toRadians(90)));
     }
 
     public void displayInfo() {
